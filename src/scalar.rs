@@ -2,8 +2,8 @@
 
 use crate::{Arch, Simd};
 
-use std::fmt::{self, Debug};
-use std::ops::{Index, IndexMut};
+use core::fmt::{self, Debug};
+use core::ops::{Index, IndexMut};
 
 pub struct Scalar;
 

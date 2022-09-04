@@ -1,5 +1,5 @@
-use std::fmt::Debug;
-use std::ops::{Index, IndexMut};
+use core::fmt::Debug;
+use core::ops::{Index, IndexMut};
 
 mod scalar;
 
