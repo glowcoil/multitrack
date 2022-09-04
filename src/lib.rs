@@ -8,7 +8,7 @@ mod scalar;
 
 #[allow(non_camel_case_types)]
 pub trait Arch {
-    type f32: Num<Elem = f32, Arch = Self>;
+    type f32: Simd<Elem = f32, Arch = Self> + Num;
 }
 
 pub trait Simd
@@ -24,8 +24,9 @@ where
     fn new(elem: Self::Elem) -> Self;
 }
 
-pub trait Num: Simd
+pub trait Num
 where
+    Self: Sized,
     Self: Add<Output = Self> + AddAssign,
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
