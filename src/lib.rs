@@ -4,6 +4,8 @@ use core::ops::{
 };
 use core::ops::{Index, IndexMut};
 
+mod mask;
+
 mod scalar;
 
 #[allow(non_camel_case_types)]
