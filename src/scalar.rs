@@ -1,17 +1,20 @@
 #![allow(non_camel_case_types)]
 
-use crate::{Arch, Num, Simd};
+use crate::mask::m32;
+use crate::{Arch, Mask, Num, Select, Simd};
 
+use core::fmt::{self, Debug};
 use core::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
-use core::fmt::{self, Debug};
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 
 pub struct Scalar;
 
 impl Arch for Scalar {
     type f32 = f32x1;
+    type m32 = m32x1;
 }
 
 #[derive(Copy, Clone, Default)]
@@ -127,5 +130,113 @@ impl Neg for f32x1 {
 
     fn neg(self) -> Self {
         f32x1(-self.0)
+    }
+}
+
+#[derive(Copy, Clone, Default)]
+pub struct m32x1(m32);
+
+impl Simd for m32x1 {
+    type Arch = Scalar;
+    type Elem = m32;
+
+    const LANES: usize = 1;
+
+    fn new(elem: Self::Elem) -> Self {
+        m32x1(elem)
+    }
+}
+
+impl Index<usize> for m32x1 {
+    type Output = m32;
+
+    fn index(&self, index: usize) -> &m32 {
+        assert!(index == 0);
+        &self.0
+    }
+}
+
+impl IndexMut<usize> for m32x1 {
+    fn index_mut(&mut self, index: usize) -> &mut m32 {
+        assert!(index == 0);
+        &mut self.0
+    }
+}
+
+impl Debug for m32x1 {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_tuple("Scalar::m32").field(&self.0).finish()
+    }
+}
+
+impl Mask for m32x1 {}
+
+impl BitAnd for m32x1 {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        m32x1(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for m32x1 {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 &= rhs.0;
+    }
+}
+
+impl BitOr for m32x1 {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        m32x1(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for m32x1 {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
+    }
+}
+
+impl BitXor for m32x1 {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        m32x1(self.0 ^ rhs.0)
+    }
+}
+
+impl BitXorAssign for m32x1 {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        self.0 ^= rhs.0;
+    }
+}
+
+impl Not for m32x1 {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        m32x1(!self.0)
+    }
+}
+
+impl Select<f32x1> for m32x1 {
+    fn select(self, if_true: f32x1, if_false: f32x1) -> f32x1 {
+        if self.0.into() {
+            if_true
+        } else {
+            if_false
+        }
+    }
+}
+
+impl Select<m32x1> for m32x1 {
+    fn select(self, if_true: m32x1, if_false: m32x1) -> m32x1 {
+        if self.0.into() {
+            if_true
+        } else {
+            if_false
+        }
     }
 }

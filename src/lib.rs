@@ -2,15 +2,21 @@ use core::fmt::Debug;
 use core::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 
 mod mask;
+use mask::m32;
 
 mod scalar;
 
 #[allow(non_camel_case_types)]
-pub trait Arch {
-    type f32: Simd<Elem = f32, Arch = Self> + Num;
+pub trait Arch
+where
+    Self::m32: Select<Self::f32> + Select<Self::m32>,
+{
+    type f32: Simd<Arch = Self, Elem = f32> + Num;
+    type m32: Simd<Arch = Self, Elem = m32> + Mask;
 }
 
 pub trait Simd
@@ -38,6 +44,20 @@ where
 {
 }
 
+pub trait Mask
+where
+    Self: Sized,
+    Self: BitAnd + BitAndAssign,
+    Self: BitOr + BitOrAssign,
+    Self: BitXor + BitXorAssign,
+    Self: Not,
+{
+}
+
+pub trait Select<V> {
+    fn select(self, if_true: V, if_false: V) -> V;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,7 +70,10 @@ mod tests {
 
             let y = A::f32::new(1.0);
 
-            assert_eq!((x + y)[0], 3.0);
+            let t = A::m32::new(false.into());
+            let z = t.select(A::f32::new(0.0), x + y);
+
+            assert_eq!(z[0], 3.0);
         }
 
         f::<scalar::Scalar>();

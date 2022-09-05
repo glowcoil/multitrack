@@ -4,7 +4,7 @@ use core::fmt::{self, Debug};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 #[derive(Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct m32(u32);
+pub struct m32(u32);
 
 impl m32 {
     pub const TRUE: m32 = m32(!0);
