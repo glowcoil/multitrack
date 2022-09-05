@@ -9,6 +9,7 @@ use core::ops::{
 };
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
+use core::slice;
 
 pub struct Scalar;
 
@@ -28,6 +29,22 @@ impl Simd for f32x1 {
 
     fn new(elem: Self::Elem) -> Self {
         f32x1(elem)
+    }
+
+    fn as_slice(&self) -> &[Self::Elem] {
+        slice::from_ref(&self.0)
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+        slice::from_mut(&mut self.0)
+    }
+
+    fn from_slice(slice: &[Self::Elem]) -> Self {
+        Self::new(slice[0])
+    }
+
+    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+        slice[0] = self.0;
     }
 }
 
@@ -158,6 +175,22 @@ impl Simd for m32x1 {
 
     fn new(elem: Self::Elem) -> Self {
         m32x1(elem)
+    }
+
+    fn as_slice(&self) -> &[Self::Elem] {
+        slice::from_ref(&self.0)
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+        slice::from_mut(&mut self.0)
+    }
+
+    fn from_slice(slice: &[Self::Elem]) -> Self {
+        Self::new(slice[0])
+    }
+
+    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+        slice[0] = self.0;
     }
 }
 
