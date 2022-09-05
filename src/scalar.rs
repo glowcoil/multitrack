@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::m32;
-use crate::{Arch, Mask, Num, Select, Simd};
+use crate::{Arch, Mask, Num, Select, Simd, LanesEq, LanesOrd};
 
 use core::fmt::{self, Debug};
 use core::ops::{
@@ -28,6 +28,20 @@ impl Simd for f32x1 {
 
     fn new(elem: Self::Elem) -> Self {
         f32x1(elem)
+    }
+}
+
+impl LanesEq for f32x1 {
+    type Output = m32x1;
+
+    fn eq(&self, other: &f32x1) -> m32x1 {
+        m32x1((self.0 == other.0).into())
+    }
+}
+
+impl LanesOrd for f32x1 {
+    fn lt(&self, other: &f32x1) -> m32x1 {
+        m32x1((self.0 < other.0).into())
     }
 }
 
@@ -144,6 +158,14 @@ impl Simd for m32x1 {
 
     fn new(elem: Self::Elem) -> Self {
         m32x1(elem)
+    }
+}
+
+impl LanesEq for m32x1 {
+    type Output = m32x1;
+
+    fn eq(&self, other: &m32x1) -> m32x1 {
+        m32x1((self.0 == other.0).into())
     }
 }
 

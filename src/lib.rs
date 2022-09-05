@@ -19,9 +19,9 @@ where
     type m32: Simd<Arch = Self, Elem = m32> + Mask;
 }
 
-pub trait Simd
+pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
 where
-    Self: Copy + Clone + Debug + Default + Send + Sync + Sized,
+    Self: LanesEq,
     Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
 {
     type Arch: Arch;
@@ -32,9 +32,9 @@ where
     fn new(elem: Self::Elem) -> Self;
 }
 
-pub trait Num
+pub trait Num: Sized
 where
-    Self: Sized,
+    Self: LanesOrd,
     Self: Add<Output = Self> + AddAssign,
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
@@ -44,14 +44,51 @@ where
 {
 }
 
-pub trait Mask
+pub trait Mask: Sized
 where
-    Self: Sized,
-    Self: BitAnd + BitAndAssign,
-    Self: BitOr + BitOrAssign,
-    Self: BitXor + BitXorAssign,
-    Self: Not,
+    Self: BitAnd<Output = Self> + BitAndAssign,
+    Self: BitOr<Output = Self> + BitOrAssign,
+    Self: BitXor<Output = Self> + BitXorAssign,
+    Self: Not<Output = Self>,
 {
+}
+
+pub trait LanesEq<Rhs = Self>: Sized {
+    type Output: Mask + Select<Self>;
+
+    fn eq(&self, other: &Self) -> Self::Output;
+
+    fn ne(&self, other: &Self) -> Self::Output {
+        !self.eq(other)
+    }
+}
+
+pub trait LanesOrd<Rhs = Self>: LanesEq<Rhs> {
+    fn lt(&self, other: &Self) -> Self::Output;
+
+    fn le(&self, other: &Self) -> Self::Output {
+        self.lt(other) | self.eq(other)
+    }
+
+    fn gt(&self, other: &Self) -> Self::Output {
+        !self.le(other)
+    }
+
+    fn ge(&self, other: &Self) -> Self::Output {
+        !self.lt(other)
+    }
+
+    fn max(self, other: Self) -> Self {
+        other.lt(&self).select(self, other)
+    }
+
+    fn min(self, other: Self) -> Self {
+        self.lt(&other).select(self, other)
+    }
+
+    fn clamp(self, min: Self, max: Self) -> Self {
+        self.max(min).min(max)
+    }
 }
 
 pub trait Select<V> {
@@ -66,12 +103,11 @@ mod tests {
     fn basic() {
         fn f<A: Arch>() {
             let mut x = A::f32::new(0.0);
-            x[0] = 2.0;
+            x[0] = 1.0;
 
-            let y = A::f32::new(1.0);
+            let y = A::f32::new(2.0);
 
-            let t = A::m32::new(false.into());
-            let z = t.select(A::f32::new(0.0), x + y);
+            let z = x.lt(&y).select(x + y, x * y);
 
             assert_eq!(z[0], 3.0);
         }
