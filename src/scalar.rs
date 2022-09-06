@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types)]
 
-use crate::mask::m32;
+use crate::mask::*;
 use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
 
 use core::fmt::{self, Debug};
@@ -15,305 +15,250 @@ pub struct Scalar;
 
 impl Arch for Scalar {
     type f32 = f32x1;
+    type f64 = f64x1;
     type m32 = m32x1;
+    type m64 = m64x1;
 }
 
-#[derive(Copy, Clone, Default)]
-#[repr(transparent)]
-pub struct f32x1(f32);
+macro_rules! scalar_type {
+    ($scalar:ident, $inner:ident, $mask:ident) => {
+        #[derive(Copy, Clone, Default)]
+        #[repr(transparent)]
+        pub struct $scalar($inner);
 
-impl Simd for f32x1 {
-    type Arch = Scalar;
-    type Elem = f32;
+        impl Simd for $scalar {
+            type Arch = Scalar;
+            type Elem = $inner;
 
-    const LANES: usize = 1;
+            const LANES: usize = 1;
 
-    fn new(elem: Self::Elem) -> Self {
-        f32x1(elem)
-    }
+            fn new(elem: Self::Elem) -> Self {
+                $scalar(elem)
+            }
 
-    fn as_slice(&self) -> &[Self::Elem] {
-        slice::from_ref(&self.0)
-    }
+            fn as_slice(&self) -> &[Self::Elem] {
+                slice::from_ref(&self.0)
+            }
 
-    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-        slice::from_mut(&mut self.0)
-    }
+            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+                slice::from_mut(&mut self.0)
+            }
 
-    fn from_slice(slice: &[Self::Elem]) -> Self {
-        Self::new(slice[0])
-    }
+            fn from_slice(slice: &[Self::Elem]) -> Self {
+                Self::new(slice[0])
+            }
 
-    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-        slice[0] = self.0;
-    }
+            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+                slice[0] = self.0;
+            }
 
-    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        unsafe { slice.align_to::<Self>() }
-    }
+            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+                unsafe { slice.align_to::<Self>() }
+            }
 
-    fn align_mut_slice(
-        slice: &mut [Self::Elem],
-    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        unsafe { slice.align_to_mut::<Self>() }
-    }
-}
-
-impl LanesEq for f32x1 {
-    type Output = m32x1;
-
-    fn eq(&self, other: &f32x1) -> m32x1 {
-        m32x1((self.0 == other.0).into())
-    }
-}
-
-impl LanesOrd for f32x1 {
-    fn lt(&self, other: &f32x1) -> m32x1 {
-        m32x1((self.0 < other.0).into())
-    }
-}
-
-impl Index<usize> for f32x1 {
-    type Output = f32;
-
-    fn index(&self, index: usize) -> &f32 {
-        assert!(index == 0);
-        &self.0
-    }
-}
-
-impl IndexMut<usize> for f32x1 {
-    fn index_mut(&mut self, index: usize) -> &mut f32 {
-        assert!(index == 0);
-        &mut self.0
-    }
-}
-
-impl Debug for f32x1 {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_list().entry(&self.0).finish()
-    }
-}
-
-impl Num for f32x1 {}
-
-impl Add for f32x1 {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self {
-        f32x1(self.0 + rhs.0)
-    }
-}
-
-impl AddAssign for f32x1 {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0;
-    }
-}
-
-impl Sub for f32x1 {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self {
-        f32x1(self.0 - rhs.0)
-    }
-}
-
-impl SubAssign for f32x1 {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.0 -= rhs.0;
-    }
-}
-
-impl Mul for f32x1 {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self {
-        f32x1(self.0 * rhs.0)
-    }
-}
-
-impl MulAssign for f32x1 {
-    fn mul_assign(&mut self, rhs: Self) {
-        self.0 *= rhs.0;
-    }
-}
-
-impl Div for f32x1 {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self {
-        f32x1(self.0 / rhs.0)
-    }
-}
-
-impl DivAssign for f32x1 {
-    fn div_assign(&mut self, rhs: Self) {
-        self.0 /= rhs.0;
-    }
-}
-
-impl Rem for f32x1 {
-    type Output = Self;
-
-    fn rem(self, rhs: Self) -> Self {
-        f32x1(self.0 % rhs.0)
-    }
-}
-
-impl RemAssign for f32x1 {
-    fn rem_assign(&mut self, rhs: Self) {
-        self.0 %= rhs.0;
-    }
-}
-
-impl Neg for f32x1 {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        f32x1(-self.0)
-    }
-}
-
-#[derive(Copy, Clone, Default)]
-#[repr(transparent)]
-pub struct m32x1(m32);
-
-impl Simd for m32x1 {
-    type Arch = Scalar;
-    type Elem = m32;
-
-    const LANES: usize = 1;
-
-    fn new(elem: Self::Elem) -> Self {
-        m32x1(elem)
-    }
-
-    fn as_slice(&self) -> &[Self::Elem] {
-        slice::from_ref(&self.0)
-    }
-
-    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-        slice::from_mut(&mut self.0)
-    }
-
-    fn from_slice(slice: &[Self::Elem]) -> Self {
-        Self::new(slice[0])
-    }
-
-    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-        slice[0] = self.0;
-    }
-
-    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        unsafe { slice.align_to::<Self>() }
-    }
-
-    fn align_mut_slice(
-        slice: &mut [Self::Elem],
-    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        unsafe { slice.align_to_mut::<Self>() }
-    }
-}
-
-impl LanesEq for m32x1 {
-    type Output = m32x1;
-
-    fn eq(&self, other: &m32x1) -> m32x1 {
-        m32x1((self.0 == other.0).into())
-    }
-}
-
-impl Index<usize> for m32x1 {
-    type Output = m32;
-
-    fn index(&self, index: usize) -> &m32 {
-        assert!(index == 0);
-        &self.0
-    }
-}
-
-impl IndexMut<usize> for m32x1 {
-    fn index_mut(&mut self, index: usize) -> &mut m32 {
-        assert!(index == 0);
-        &mut self.0
-    }
-}
-
-impl Debug for m32x1 {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_list().entry(&self.0).finish()
-    }
-}
-
-impl Mask for m32x1 {}
-
-impl BitAnd for m32x1 {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        m32x1(self.0 & rhs.0)
-    }
-}
-
-impl BitAndAssign for m32x1 {
-    fn bitand_assign(&mut self, rhs: Self) {
-        self.0 &= rhs.0;
-    }
-}
-
-impl BitOr for m32x1 {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        m32x1(self.0 | rhs.0)
-    }
-}
-
-impl BitOrAssign for m32x1 {
-    fn bitor_assign(&mut self, rhs: Self) {
-        self.0 |= rhs.0;
-    }
-}
-
-impl BitXor for m32x1 {
-    type Output = Self;
-
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        m32x1(self.0 ^ rhs.0)
-    }
-}
-
-impl BitXorAssign for m32x1 {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        self.0 ^= rhs.0;
-    }
-}
-
-impl Not for m32x1 {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        m32x1(!self.0)
-    }
-}
-
-impl Select<f32x1> for m32x1 {
-    fn select(self, if_true: f32x1, if_false: f32x1) -> f32x1 {
-        if self.0.into() {
-            if_true
-        } else {
-            if_false
+            fn align_mut_slice(
+                slice: &mut [Self::Elem],
+            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+                unsafe { slice.align_to_mut::<Self>() }
+            }
         }
-    }
+
+        impl LanesEq for $scalar {
+            type Output = $mask;
+
+            fn eq(&self, other: &$scalar) -> $mask {
+                $mask((self.0 == other.0).into())
+            }
+        }
+
+        impl LanesOrd for $scalar {
+            fn lt(&self, other: &$scalar) -> $mask {
+                $mask((self.0 < other.0).into())
+            }
+        }
+
+        impl Index<usize> for $scalar {
+            type Output = $inner;
+
+            fn index(&self, index: usize) -> &$inner {
+                assert!(index == 0);
+                &self.0
+            }
+        }
+
+        impl IndexMut<usize> for $scalar {
+            fn index_mut(&mut self, index: usize) -> &mut $inner {
+                assert!(index == 0);
+                &mut self.0
+            }
+        }
+
+        impl Debug for $scalar {
+            fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt.debug_list().entry(&self.0).finish()
+            }
+        }
+    };
 }
 
-impl Select<m32x1> for m32x1 {
-    fn select(self, if_true: m32x1, if_false: m32x1) -> m32x1 {
-        if self.0.into() {
-            if_true
-        } else {
-            if_false
+macro_rules! impl_num {
+    ($num:ident) => {
+        impl Num for $num {}
+
+        impl Add for $num {
+            type Output = Self;
+
+            fn add(self, rhs: Self) -> Self {
+                $num(self.0 + rhs.0)
+            }
         }
-    }
+
+        impl AddAssign for $num {
+            fn add_assign(&mut self, rhs: Self) {
+                self.0 += rhs.0;
+            }
+        }
+
+        impl Sub for $num {
+            type Output = Self;
+
+            fn sub(self, rhs: Self) -> Self {
+                $num(self.0 - rhs.0)
+            }
+        }
+
+        impl SubAssign for $num {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.0 -= rhs.0;
+            }
+        }
+
+        impl Mul for $num {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                $num(self.0 * rhs.0)
+            }
+        }
+
+        impl MulAssign for $num {
+            fn mul_assign(&mut self, rhs: Self) {
+                self.0 *= rhs.0;
+            }
+        }
+
+        impl Div for $num {
+            type Output = Self;
+
+            fn div(self, rhs: Self) -> Self {
+                $num(self.0 / rhs.0)
+            }
+        }
+
+        impl DivAssign for $num {
+            fn div_assign(&mut self, rhs: Self) {
+                self.0 /= rhs.0;
+            }
+        }
+
+        impl Rem for $num {
+            type Output = Self;
+
+            fn rem(self, rhs: Self) -> Self {
+                $num(self.0 % rhs.0)
+            }
+        }
+
+        impl RemAssign for $num {
+            fn rem_assign(&mut self, rhs: Self) {
+                self.0 %= rhs.0;
+            }
+        }
+
+        impl Neg for $num {
+            type Output = Self;
+
+            fn neg(self) -> Self {
+                $num(-self.0)
+            }
+        }
+    };
 }
+
+macro_rules! impl_mask {
+    ($mask:ident, { $($select:ident),* }) => {
+        impl Mask for $mask {}
+
+        impl BitAnd for $mask {
+            type Output = Self;
+
+            fn bitand(self, rhs: Self) -> Self::Output {
+                $mask(self.0 & rhs.0)
+            }
+        }
+
+        impl BitAndAssign for $mask {
+            fn bitand_assign(&mut self, rhs: Self) {
+                self.0 &= rhs.0;
+            }
+        }
+
+        impl BitOr for $mask {
+            type Output = Self;
+
+            fn bitor(self, rhs: Self) -> Self::Output {
+                $mask(self.0 | rhs.0)
+            }
+        }
+
+        impl BitOrAssign for $mask {
+            fn bitor_assign(&mut self, rhs: Self) {
+                self.0 |= rhs.0;
+            }
+        }
+
+        impl BitXor for $mask {
+            type Output = Self;
+
+            fn bitxor(self, rhs: Self) -> Self::Output {
+                $mask(self.0 ^ rhs.0)
+            }
+        }
+
+        impl BitXorAssign for $mask {
+            fn bitxor_assign(&mut self, rhs: Self) {
+                self.0 ^= rhs.0;
+            }
+        }
+
+        impl Not for $mask {
+            type Output = Self;
+
+            fn not(self) -> Self::Output {
+                $mask(!self.0)
+            }
+        }
+
+        $(
+            impl Select<$select> for $mask {
+                fn select(self, if_true: $select, if_false: $select) -> $select {
+                    if self.0.into() {
+                        if_true
+                    } else {
+                        if_false
+                    }
+                }
+            }
+        )*
+    };
+}
+
+scalar_type! { f32x1, f32, m32x1 }
+scalar_type! { f64x1, f64, m64x1 }
+impl_num! { f64x1 }
+impl_num! { f32x1 }
+
+scalar_type! { m32x1, m32, m32x1 }
+scalar_type! { m64x1, m64, m64x1 }
+impl_mask! { m64x1, { f64x1, m64x1 } }
+impl_mask! { m32x1, { f32x1, m32x1 } }

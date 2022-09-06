@@ -14,9 +14,12 @@ mod scalar;
 pub trait Arch
 where
     Self::m32: Select<Self::f32> + Select<Self::m32>,
+    Self::m64: Select<Self::f64> + Select<Self::m64>,
 {
     type f32: Simd<Arch = Self, Elem = f32> + Num;
+    type f64: Simd<Arch = Self, Elem = f64> + Num;
     type m32: Simd<Arch = Self, Elem = m32> + Mask;
+    type m64: Simd<Arch = Self, Elem = m64> + Mask;
 }
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
