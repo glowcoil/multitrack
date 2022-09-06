@@ -19,6 +19,7 @@ impl Arch for Scalar {
 }
 
 #[derive(Copy, Clone, Default)]
+#[repr(transparent)]
 pub struct f32x1(f32);
 
 impl Simd for f32x1 {
@@ -175,6 +176,7 @@ impl Neg for f32x1 {
 }
 
 #[derive(Copy, Clone, Default)]
+#[repr(transparent)]
 pub struct m32x1(m32);
 
 impl Simd for m32x1 {
