@@ -84,7 +84,7 @@ macro_rules! mask_type {
                 Debug::fmt(&bool::from(*self), fmt)
             }
         }
-    }
+    };
 }
 
 mask_type! { m8, u8 }
