@@ -8,7 +8,7 @@ use core::ops::{Index, IndexMut};
 pub mod mask;
 use mask::*;
 
-mod scalar;
+mod arch;
 
 #[allow(non_camel_case_types)]
 pub trait Arch
@@ -126,6 +126,8 @@ pub trait Select<V> {
 mod tests {
     use super::*;
 
+    use arch::scalar::Scalar;
+
     #[test]
     fn basic() {
         fn f<A: Arch>() {
@@ -139,7 +141,7 @@ mod tests {
             assert_eq!(z[0], 3.0);
         }
 
-        f::<scalar::Scalar>();
+        f::<Scalar>();
     }
 
     #[test]
@@ -161,6 +163,6 @@ mod tests {
             assert_eq!(&a, &[1.0; 100]);
         }
 
-        f::<scalar::Scalar>();
+        f::<Scalar>();
     }
 }
