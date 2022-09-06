@@ -5,8 +5,8 @@ use core::ops::{
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 
-mod mask;
-use mask::m32;
+pub mod mask;
+use mask::*;
 
 mod scalar;
 
