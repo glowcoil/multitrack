@@ -91,7 +91,7 @@ impl IndexMut<usize> for f32x1 {
 
 impl Debug for f32x1 {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_tuple("Scalar::f32").field(&self.0).finish()
+        fmt.debug_list().entry(&self.0).finish()
     }
 }
 
@@ -242,7 +242,7 @@ impl IndexMut<usize> for m32x1 {
 
 impl Debug for m32x1 {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.debug_tuple("Scalar::m32").field(&self.0).finish()
+        fmt.debug_list().entry(&self.0).finish()
     }
 }
 
