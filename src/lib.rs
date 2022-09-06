@@ -35,6 +35,10 @@ where
     fn as_mut_slice(&mut self) -> &mut [Self::Elem];
     fn from_slice(slice: &[Self::Elem]) -> Self;
     fn write_to_slice(&self, slice: &mut [Self::Elem]);
+    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]);
+    fn align_mut_slice(
+        slice: &mut [Self::Elem],
+    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]);
 }
 
 pub trait Num: Sized
@@ -115,6 +119,28 @@ mod tests {
             let z = x.lt(&y).select(x + y, x * y);
 
             assert_eq!(z[0], 3.0);
+        }
+
+        f::<scalar::Scalar>();
+    }
+
+    #[test]
+    fn align_slice() {
+        fn f<A: Arch>() {
+            let mut a = [0.0; 100];
+
+            let (prefix, middle, suffix) = A::f32::align_mut_slice(&mut a);
+            for x in prefix {
+                *x += 1.0;
+            }
+            for x in middle {
+                *x += A::f32::new(1.0);
+            }
+            for x in suffix {
+                *x += 1.0;
+            }
+
+            assert_eq!(&a, &[1.0; 100]);
         }
 
         f::<scalar::Scalar>();

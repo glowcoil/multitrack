@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::m32;
-use crate::{Arch, Mask, Num, Select, Simd, LanesEq, LanesOrd};
+use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
 
 use core::fmt::{self, Debug};
 use core::ops::{
@@ -45,6 +45,16 @@ impl Simd for f32x1 {
 
     fn write_to_slice(&self, slice: &mut [Self::Elem]) {
         slice[0] = self.0;
+    }
+
+    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+        unsafe { slice.align_to::<Self>() }
+    }
+
+    fn align_mut_slice(
+        slice: &mut [Self::Elem],
+    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+        unsafe { slice.align_to_mut::<Self>() }
     }
 }
 
@@ -191,6 +201,16 @@ impl Simd for m32x1 {
 
     fn write_to_slice(&self, slice: &mut [Self::Elem]) {
         slice[0] = self.0;
+    }
+
+    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+        unsafe { slice.align_to::<Self>() }
+    }
+
+    fn align_mut_slice(
+        slice: &mut [Self::Elem],
+    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+        unsafe { slice.align_to_mut::<Self>() }
     }
 }
 
