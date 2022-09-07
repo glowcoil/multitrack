@@ -19,7 +19,6 @@ macro_rules! scalar_type {
         pub struct $scalar($inner);
 
         impl Simd for $scalar {
-            type Arch = Scalar;
             type Elem = $inner;
 
             const LANES: usize = 1;
@@ -100,7 +99,6 @@ macro_rules! wrapping_scalar_type {
         pub struct $scalar(Wrapping<$inner>);
 
         impl Simd for $scalar {
-            type Arch = Scalar;
             type Elem = $inner;
 
             const LANES: usize = 1;

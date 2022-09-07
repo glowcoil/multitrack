@@ -18,23 +18,23 @@ where
     Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
     Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
 {
-    type u8: Simd<Arch = Self, Elem = u8> + Num;
-    type u16: Simd<Arch = Self, Elem = u16> + Num;
-    type u32: Simd<Arch = Self, Elem = u32> + Num;
-    type u64: Simd<Arch = Self, Elem = u64> + Num;
+    type u8: Simd<Elem = u8> + Num;
+    type u16: Simd<Elem = u16> + Num;
+    type u32: Simd<Elem = u32> + Num;
+    type u64: Simd<Elem = u64> + Num;
 
-    type i8: Simd<Arch = Self, Elem = i8> + Num;
-    type i16: Simd<Arch = Self, Elem = i16> + Num;
-    type i32: Simd<Arch = Self, Elem = i32> + Num;
-    type i64: Simd<Arch = Self, Elem = i64> + Num;
+    type i8: Simd<Elem = i8> + Num;
+    type i16: Simd<Elem = i16> + Num;
+    type i32: Simd<Elem = i32> + Num;
+    type i64: Simd<Elem = i64> + Num;
 
-    type f32: Simd<Arch = Self, Elem = f32> + Num;
-    type f64: Simd<Arch = Self, Elem = f64> + Num;
+    type f32: Simd<Elem = f32> + Num;
+    type f64: Simd<Elem = f64> + Num;
 
-    type m8: Simd<Arch = Self, Elem = m8> + Mask;
-    type m16: Simd<Arch = Self, Elem = m16> + Mask;
-    type m32: Simd<Arch = Self, Elem = m32> + Mask;
-    type m64: Simd<Arch = Self, Elem = m64> + Mask;
+    type m8: Simd<Elem = m8> + Mask;
+    type m16: Simd<Elem = m16> + Mask;
+    type m32: Simd<Elem = m32> + Mask;
+    type m64: Simd<Elem = m64> + Mask;
 }
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
@@ -42,7 +42,6 @@ where
     Self: LanesEq,
     Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
 {
-    type Arch: Arch;
     type Elem;
 
     const LANES: usize;
