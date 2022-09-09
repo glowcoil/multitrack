@@ -196,13 +196,13 @@ impl DivAssign for f32x8 {
 impl Rem for f32x8 {
     type Output = Self;
 
-    fn rem(self, rhs: Self) -> Self {
+    fn rem(self, _rhs: Self) -> Self {
         unimplemented!()
     }
 }
 
 impl RemAssign for f32x8 {
-    fn rem_assign(&mut self, rhs: Self) {
+    fn rem_assign(&mut self, _rhs: Self) {
         unimplemented!()
     }
 }
@@ -394,13 +394,13 @@ impl DivAssign for f64x4 {
 impl Rem for f64x4 {
     type Output = Self;
 
-    fn rem(self, rhs: Self) -> Self {
+    fn rem(self, _rhs: Self) -> Self {
         unimplemented!()
     }
 }
 
 impl RemAssign for f64x4 {
-    fn rem_assign(&mut self, rhs: Self) {
+    fn rem_assign(&mut self, _rhs: Self) {
         unimplemented!()
     }
 }
