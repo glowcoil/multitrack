@@ -238,7 +238,7 @@ impl BitOr for m32x8 {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { m32x8(_mm256_and_si256(self.0, rhs.0)) }
+        unsafe { m32x8(_mm256_or_si256(self.0, rhs.0)) }
     }
 }
 
@@ -286,7 +286,9 @@ mod tests {
     #[test]
     fn test() {
         let x = f32x8::new(3.0);
-        let y = x.eq(&f32x8::new(3.0)).select(f32x8::new(0.0), f32x8::new(1.0));
+        let y = x
+            .eq(&f32x8::new(3.0))
+            .select(f32x8::new(0.0), f32x8::new(1.0));
         assert_eq!(y[0], 0.0);
     }
 }
