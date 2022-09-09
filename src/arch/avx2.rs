@@ -413,149 +413,168 @@ impl Neg for f64x4 {
     }
 }
 
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct m32x8(__m256i);
+macro_rules! mask_type {
+    ($mask:ident, $elem:ident, $lanes:literal, $set:ident, $cmp:ident) => {
+        #[derive(Copy, Clone)]
+        #[repr(transparent)]
+        pub struct $mask(__m256i);
 
-impl Simd for m32x8 {
-    type Elem = m32;
+        impl Simd for $mask {
+            type Elem = $elem;
 
-    const LANES: usize = 8;
+            const LANES: usize = $lanes;
 
-    fn new(elem: Self::Elem) -> Self {
-        unsafe { m32x8(_mm256_set1_epi32(mem::transmute(elem))) }
-    }
+            fn new(elem: Self::Elem) -> Self {
+                unsafe { $mask($set(mem::transmute(elem))) }
+            }
 
-    fn as_slice(&self) -> &[Self::Elem] {
-        unsafe { slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES) }
-    }
+            fn as_slice(&self) -> &[Self::Elem] {
+                unsafe {
+                    slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES)
+                }
+            }
 
-    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-        unsafe { slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES) }
-    }
+            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+                unsafe {
+                    slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES)
+                }
+            }
 
-    fn from_slice(slice: &[Self::Elem]) -> Self {
-        assert!(slice.len() == Self::LANES);
-        unsafe { m32x8(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
-    }
+            fn from_slice(slice: &[Self::Elem]) -> Self {
+                assert!(slice.len() == Self::LANES);
+                unsafe { $mask(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
+            }
 
-    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-        assert!(slice.len() == Self::LANES);
-        unsafe {
-            _mm256_storeu_si256(slice.as_mut_ptr() as *mut __m256i, self.0);
+            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+                assert!(slice.len() == Self::LANES);
+                unsafe {
+                    _mm256_storeu_si256(slice.as_mut_ptr() as *mut __m256i, self.0);
+                }
+            }
+
+            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+                unsafe { slice.align_to::<Self>() }
+            }
+
+            fn align_mut_slice(
+                slice: &mut [Self::Elem],
+            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+                unsafe { slice.align_to_mut::<Self>() }
+            }
         }
-    }
 
-    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        unsafe { slice.align_to::<Self>() }
-    }
+        impl Debug for $mask {
+            fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+                Debug::fmt(self.as_slice(), fmt)
+            }
+        }
 
-    fn align_mut_slice(
-        slice: &mut [Self::Elem],
-    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        unsafe { slice.align_to_mut::<Self>() }
-    }
+        impl Default for $mask {
+            fn default() -> Self {
+                unsafe { mem::zeroed() }
+            }
+        }
+
+        impl LanesEq for $mask {
+            type Output = $mask;
+
+            fn eq(&self, other: &Self) -> Self::Output {
+                unsafe { $mask($cmp(self.0, other.0)) }
+            }
+
+            fn ne(&self, other: &Self) -> Self::Output {
+                unsafe { $mask(_mm256_xor_si256(self.0, other.0)) }
+            }
+        }
+
+        impl LanesOrd for $mask {
+            fn lt(&self, other: &Self) -> Self::Output {
+                unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
+            }
+
+            fn gt(&self, other: &Self) -> Self::Output {
+                unsafe { $mask(_mm256_andnot_si256(other.0, self.0)) }
+            }
+        }
+
+        impl Index<usize> for $mask {
+            type Output = <Self as Simd>::Elem;
+
+            fn index(&self, index: usize) -> &Self::Output {
+                &self.as_slice()[index]
+            }
+        }
+
+        impl IndexMut<usize> for $mask {
+            fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+                &mut self.as_mut_slice()[index]
+            }
+        }
+
+        impl Mask for $mask {}
+
+        impl BitAnd for $mask {
+            type Output = Self;
+
+            fn bitand(self, rhs: Self) -> Self::Output {
+                unsafe { $mask(_mm256_and_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitAndAssign for $mask {
+            fn bitand_assign(&mut self, rhs: Self) {
+                *self = *self & rhs;
+            }
+        }
+
+        impl BitOr for $mask {
+            type Output = Self;
+
+            fn bitor(self, rhs: Self) -> Self::Output {
+                unsafe { $mask(_mm256_or_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitOrAssign for $mask {
+            fn bitor_assign(&mut self, rhs: Self) {
+                *self = *self | rhs;
+            }
+        }
+
+        impl BitXor for $mask {
+            type Output = Self;
+
+            fn bitxor(self, rhs: Self) -> Self::Output {
+                unsafe { $mask(_mm256_xor_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitXorAssign for $mask {
+            fn bitxor_assign(&mut self, rhs: Self) {
+                *self = *self ^ rhs;
+            }
+        }
+
+        impl Not for $mask {
+            type Output = Self;
+
+            fn not(self) -> Self::Output {
+                unsafe { $mask(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
+            }
+        }
+
+        impl Select<$mask> for $mask {
+            fn select(self, if_true: $mask, if_false: $mask) -> $mask {
+                unsafe { $mask(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+            }
+        }
+    };
 }
 
-impl Debug for m32x8 {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self.as_slice(), fmt)
-    }
-}
-
-impl Default for m32x8 {
-    fn default() -> Self {
-        unsafe { mem::zeroed() }
-    }
-}
-
-impl LanesEq for m32x8 {
-    type Output = m32x8;
-
-    fn eq(&self, other: &Self) -> Self::Output {
-        unsafe { m32x8(_mm256_cmpeq_epi32(self.0, other.0)) }
-    }
-
-    fn ne(&self, other: &Self) -> Self::Output {
-        unsafe { m32x8(_mm256_xor_si256(self.0, other.0)) }
-    }
-}
-
-impl LanesOrd for m32x8 {
-    fn lt(&self, other: &Self) -> Self::Output {
-        unsafe { m32x8(_mm256_andnot_si256(self.0, other.0)) }
-    }
-
-    fn gt(&self, other: &Self) -> Self::Output {
-        unsafe { m32x8(_mm256_andnot_si256(other.0, self.0)) }
-    }
-}
-
-impl Index<usize> for m32x8 {
-    type Output = <Self as Simd>::Elem;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.as_slice()[index]
-    }
-}
-
-impl IndexMut<usize> for m32x8 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.as_mut_slice()[index]
-    }
-}
-
-impl Mask for m32x8 {}
-
-impl BitAnd for m32x8 {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        unsafe { m32x8(_mm256_and_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitAndAssign for m32x8 {
-    fn bitand_assign(&mut self, rhs: Self) {
-        *self = *self & rhs;
-    }
-}
-
-impl BitOr for m32x8 {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { m32x8(_mm256_or_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitOrAssign for m32x8 {
-    fn bitor_assign(&mut self, rhs: Self) {
-        *self = *self | rhs;
-    }
-}
-
-impl BitXor for m32x8 {
-    type Output = Self;
-
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        unsafe { m32x8(_mm256_xor_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitXorAssign for m32x8 {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        *self = *self ^ rhs;
-    }
-}
-
-impl Not for m32x8 {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        unsafe { m32x8(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
-    }
-}
+mask_type! { m8x32, m8, 32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
+mask_type! { m16x16, m16, 16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
+mask_type! { m32x8, m32, 8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
+mask_type! { m64x4, m64, 4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
 
 impl Select<f32x8> for m32x8 {
     fn select(self, if_true: f32x8, if_false: f32x8) -> f32x8 {
@@ -563,68 +582,6 @@ impl Select<f32x8> for m32x8 {
             let mask = _mm256_castsi256_ps(self.0);
             f32x8(_mm256_blendv_ps(if_false.0, if_true.0, mask))
         }
-    }
-}
-
-impl Select<m32x8> for m32x8 {
-    fn select(self, if_true: m32x8, if_false: m32x8) -> m32x8 {
-        unsafe { m32x8(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
-    }
-}
-
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct m64x4(__m256i);
-
-impl Mask for m64x4 {}
-
-impl BitAnd for m64x4 {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        unsafe { m64x4(_mm256_and_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitAndAssign for m64x4 {
-    fn bitand_assign(&mut self, rhs: Self) {
-        *self = *self & rhs;
-    }
-}
-
-impl BitOr for m64x4 {
-    type Output = Self;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { m64x4(_mm256_or_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitOrAssign for m64x4 {
-    fn bitor_assign(&mut self, rhs: Self) {
-        *self = *self | rhs;
-    }
-}
-
-impl BitXor for m64x4 {
-    type Output = Self;
-
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        unsafe { m64x4(_mm256_xor_si256(self.0, rhs.0)) }
-    }
-}
-
-impl BitXorAssign for m64x4 {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        *self = *self ^ rhs;
-    }
-}
-
-impl Not for m64x4 {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        unsafe { m64x4(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
     }
 }
 
