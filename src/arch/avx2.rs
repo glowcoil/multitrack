@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types)]
 
+use crate::mask::*;
 use crate::{LanesEq, LanesOrd, Mask, Num, Select, Simd};
 
 #[cfg(target_arch = "x86")]
@@ -416,6 +417,94 @@ impl Neg for f64x4 {
 #[repr(transparent)]
 pub struct m32x8(__m256i);
 
+impl Simd for m32x8 {
+    type Elem = m32;
+
+    const LANES: usize = 8;
+
+    fn new(elem: Self::Elem) -> Self {
+        unsafe { m32x8(_mm256_set1_epi32(mem::transmute(elem))) }
+    }
+
+    fn as_slice(&self) -> &[Self::Elem] {
+        unsafe { slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES) }
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+        unsafe { slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES) }
+    }
+
+    fn from_slice(slice: &[Self::Elem]) -> Self {
+        assert!(slice.len() == Self::LANES);
+        unsafe { m32x8(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
+    }
+
+    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+        assert!(slice.len() == Self::LANES);
+        unsafe {
+            _mm256_storeu_si256(slice.as_mut_ptr() as *mut __m256i, self.0);
+        }
+    }
+
+    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+        unsafe { slice.align_to::<Self>() }
+    }
+
+    fn align_mut_slice(
+        slice: &mut [Self::Elem],
+    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+        unsafe { slice.align_to_mut::<Self>() }
+    }
+}
+
+impl Debug for m32x8 {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Debug::fmt(self.as_slice(), fmt)
+    }
+}
+
+impl Default for m32x8 {
+    fn default() -> Self {
+        unsafe { mem::zeroed() }
+    }
+}
+
+impl LanesEq for m32x8 {
+    type Output = m32x8;
+
+    fn eq(&self, other: &Self) -> Self::Output {
+        unsafe { m32x8(_mm256_cmpeq_epi32(self.0, other.0)) }
+    }
+
+    fn ne(&self, other: &Self) -> Self::Output {
+        unsafe { m32x8(_mm256_xor_si256(self.0, other.0)) }
+    }
+}
+
+impl LanesOrd for m32x8 {
+    fn lt(&self, other: &Self) -> Self::Output {
+        unsafe { m32x8(_mm256_andnot_si256(self.0, other.0)) }
+    }
+
+    fn gt(&self, other: &Self) -> Self::Output {
+        unsafe { m32x8(_mm256_andnot_si256(other.0, self.0)) }
+    }
+}
+
+impl Index<usize> for m32x8 {
+    type Output = <Self as Simd>::Elem;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_slice()[index]
+    }
+}
+
+impl IndexMut<usize> for m32x8 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.as_mut_slice()[index]
+    }
+}
+
 impl Mask for m32x8 {}
 
 impl BitAnd for m32x8 {
@@ -474,6 +563,12 @@ impl Select<f32x8> for m32x8 {
             let mask = _mm256_castsi256_ps(self.0);
             f32x8(_mm256_blendv_ps(if_false.0, if_true.0, mask))
         }
+    }
+}
+
+impl Select<m32x8> for m32x8 {
+    fn select(self, if_true: m32x8, if_false: m32x8) -> m32x8 {
+        unsafe { m32x8(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
     }
 }
 
