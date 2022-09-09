@@ -90,22 +90,6 @@ impl LanesEq for f32x8 {
     }
 }
 
-impl Index<usize> for f32x8 {
-    type Output = <Self as Simd>::Elem;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.as_slice()[index]
-    }
-}
-
-impl IndexMut<usize> for f32x8 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.as_mut_slice()[index]
-    }
-}
-
-impl Num for f32x8 {}
-
 impl LanesOrd for f32x8 {
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
@@ -135,6 +119,22 @@ impl LanesOrd for f32x8 {
         }
     }
 }
+
+impl Index<usize> for f32x8 {
+    type Output = <Self as Simd>::Elem;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_slice()[index]
+    }
+}
+
+impl IndexMut<usize> for f32x8 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.as_mut_slice()[index]
+    }
+}
+
+impl Num for f32x8 {}
 
 impl Add for f32x8 {
     type Output = Self;

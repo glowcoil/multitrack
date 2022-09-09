@@ -39,7 +39,7 @@ where
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
 where
-    Self: LanesEq,
+    Self: LanesEq + LanesOrd,
     Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
 {
     type Elem;
@@ -60,7 +60,6 @@ where
 
 pub trait Num: Sized
 where
-    Self: LanesOrd,
     Self: Add<Output = Self> + AddAssign,
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
