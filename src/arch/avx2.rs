@@ -17,400 +17,214 @@ use core::ops::{Index, IndexMut};
 use std::mem;
 use std::slice;
 
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct f32x8(__m256);
+macro_rules! float_type {
+    ($float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident, $set:ident, $load:ident, $store:ident, $cmp:ident, $cast:ident) => {
+        #[derive(Copy, Clone)]
+        #[repr(transparent)]
+        pub struct $float($inner);
 
-impl Simd for f32x8 {
-    type Elem = f32;
+        impl Simd for $float {
+            type Elem = $elem;
 
-    const LANES: usize = 8;
+            const LANES: usize = $lanes;
 
-    fn new(elem: Self::Elem) -> Self {
-        unsafe { f32x8(_mm256_set1_ps(elem)) }
-    }
+            fn new(elem: Self::Elem) -> Self {
+                unsafe { $float($set(elem)) }
+            }
 
-    fn as_slice(&self) -> &[Self::Elem] {
-        unsafe { slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES) }
-    }
+            fn as_slice(&self) -> &[Self::Elem] {
+                unsafe {
+                    slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES)
+                }
+            }
 
-    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-        unsafe { slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES) }
-    }
+            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+                unsafe {
+                    slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES)
+                }
+            }
 
-    fn from_slice(slice: &[Self::Elem]) -> Self {
-        assert!(slice.len() == Self::LANES);
-        unsafe { f32x8(_mm256_loadu_ps(slice.as_ptr())) }
-    }
+            fn from_slice(slice: &[Self::Elem]) -> Self {
+                assert!(slice.len() == Self::LANES);
+                unsafe { $float($load(slice.as_ptr())) }
+            }
 
-    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-        assert!(slice.len() == Self::LANES);
-        unsafe {
-            _mm256_storeu_ps(slice.as_mut_ptr(), self.0);
+            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+                assert!(slice.len() == Self::LANES);
+                unsafe {
+                    $store(slice.as_mut_ptr(), self.0);
+                }
+            }
+
+            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+                unsafe { slice.align_to::<Self>() }
+            }
+
+            fn align_mut_slice(
+                slice: &mut [Self::Elem],
+            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+                unsafe { slice.align_to_mut::<Self>() }
+            }
         }
-    }
 
-    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        unsafe { slice.align_to::<Self>() }
-    }
-
-    fn align_mut_slice(
-        slice: &mut [Self::Elem],
-    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        unsafe { slice.align_to_mut::<Self>() }
-    }
-}
-
-impl Debug for f32x8 {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self.as_slice(), fmt)
-    }
-}
-
-impl Default for f32x8 {
-    fn default() -> Self {
-        unsafe { mem::zeroed() }
-    }
-}
-
-impl LanesEq for f32x8 {
-    type Output = m32x8;
-
-    fn eq(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_EQ_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl Debug for $float {
+            fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+                Debug::fmt(self.as_slice(), fmt)
+            }
         }
-    }
 
-    fn ne(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_NEQ_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl Default for $float {
+            fn default() -> Self {
+                unsafe { mem::zeroed() }
+            }
         }
-    }
-}
 
-impl LanesOrd for f32x8 {
-    fn lt(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_LT_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl LanesEq for $float {
+            type Output = $mask;
+
+            fn eq(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_EQ_OQ);
+                    $mask($cast(res))
+                }
+            }
+
+            fn ne(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_NEQ_OQ);
+                    $mask($cast(res))
+                }
+            }
         }
-    }
 
-    fn le(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_LE_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl LanesOrd for $float {
+            fn lt(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_LT_OQ);
+                    $mask($cast(res))
+                }
+            }
+
+            fn le(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_LE_OQ);
+                    $mask($cast(res))
+                }
+            }
+
+            fn gt(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_GT_OQ);
+                    $mask($cast(res))
+                }
+            }
+
+            fn ge(&self, other: &Self) -> Self::Output {
+                unsafe {
+                    let res = $cmp(self.0, other.0, _CMP_GE_OQ);
+                    $mask($cast(res))
+                }
+            }
         }
-    }
 
-    fn gt(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_GT_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl Index<usize> for $float {
+            type Output = <Self as Simd>::Elem;
+
+            fn index(&self, index: usize) -> &Self::Output {
+                &self.as_slice()[index]
+            }
         }
-    }
 
-    fn ge(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_ps(self.0, other.0, _CMP_GE_OQ);
-            m32x8(_mm256_castps_si256(res))
+        impl IndexMut<usize> for $float {
+            fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+                &mut self.as_mut_slice()[index]
+            }
         }
-    }
+    };
 }
 
-impl Index<usize> for f32x8 {
-    type Output = <Self as Simd>::Elem;
+macro_rules! impl_float {
+    ($float:ident, $set:ident, $add:ident, $sub:ident, $mul:ident, $div:ident) => {
+        impl Num for $float {}
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.as_slice()[index]
-    }
-}
+        impl Add for $float {
+            type Output = Self;
 
-impl IndexMut<usize> for f32x8 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.as_mut_slice()[index]
-    }
-}
-
-impl Num for f32x8 {}
-
-impl Add for f32x8 {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self {
-        unsafe { f32x8(_mm256_add_ps(self.0, rhs.0)) }
-    }
-}
-
-impl AddAssign for f32x8 {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
-    }
-}
-
-impl Sub for f32x8 {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self {
-        unsafe { f32x8(_mm256_sub_ps(self.0, rhs.0)) }
-    }
-}
-
-impl SubAssign for f32x8 {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = *self - rhs;
-    }
-}
-
-impl Mul for f32x8 {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self {
-        unsafe { f32x8(_mm256_mul_ps(self.0, rhs.0)) }
-    }
-}
-
-impl MulAssign for f32x8 {
-    fn mul_assign(&mut self, rhs: Self) {
-        *self = *self * rhs;
-    }
-}
-
-impl Div for f32x8 {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self {
-        unsafe { f32x8(_mm256_div_ps(self.0, rhs.0)) }
-    }
-}
-
-impl DivAssign for f32x8 {
-    fn div_assign(&mut self, rhs: Self) {
-        *self = *self / rhs;
-    }
-}
-
-impl Rem for f32x8 {
-    type Output = Self;
-
-    fn rem(self, _rhs: Self) -> Self {
-        unimplemented!()
-    }
-}
-
-impl RemAssign for f32x8 {
-    fn rem_assign(&mut self, _rhs: Self) {
-        unimplemented!()
-    }
-}
-
-impl Neg for f32x8 {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        unsafe { f32x8(_mm256_sub_ps(_mm256_set1_ps(0.0), self.0)) }
-    }
-}
-
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct f64x4(__m256d);
-
-impl Simd for f64x4 {
-    type Elem = f64;
-
-    const LANES: usize = 4;
-
-    fn new(elem: Self::Elem) -> Self {
-        unsafe { f64x4(_mm256_set1_pd(elem)) }
-    }
-
-    fn as_slice(&self) -> &[Self::Elem] {
-        unsafe { slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES) }
-    }
-
-    fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-        unsafe { slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES) }
-    }
-
-    fn from_slice(slice: &[Self::Elem]) -> Self {
-        assert!(slice.len() == Self::LANES);
-        unsafe { f64x4(_mm256_loadu_pd(slice.as_ptr())) }
-    }
-
-    fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-        assert!(slice.len() == Self::LANES);
-        unsafe {
-            _mm256_storeu_pd(slice.as_mut_ptr(), self.0);
+            fn add(self, rhs: Self) -> Self {
+                unsafe { $float($add(self.0, rhs.0)) }
+            }
         }
-    }
 
-    fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-        unsafe { slice.align_to::<Self>() }
-    }
-
-    fn align_mut_slice(
-        slice: &mut [Self::Elem],
-    ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-        unsafe { slice.align_to_mut::<Self>() }
-    }
-}
-
-impl Debug for f64x4 {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self.as_slice(), fmt)
-    }
-}
-
-impl Default for f64x4 {
-    fn default() -> Self {
-        unsafe { mem::zeroed() }
-    }
-}
-
-impl LanesEq for f64x4 {
-    type Output = m64x4;
-
-    fn eq(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_EQ_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl AddAssign for $float {
+            fn add_assign(&mut self, rhs: Self) {
+                *self = *self + rhs;
+            }
         }
-    }
 
-    fn ne(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_NEQ_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl Sub for $float {
+            type Output = Self;
+
+            fn sub(self, rhs: Self) -> Self {
+                unsafe { $float($sub(self.0, rhs.0)) }
+            }
         }
-    }
-}
 
-impl Index<usize> for f64x4 {
-    type Output = <Self as Simd>::Elem;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.as_slice()[index]
-    }
-}
-
-impl IndexMut<usize> for f64x4 {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.as_mut_slice()[index]
-    }
-}
-
-impl Num for f64x4 {}
-
-impl LanesOrd for f64x4 {
-    fn lt(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_LT_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl SubAssign for $float {
+            fn sub_assign(&mut self, rhs: Self) {
+                *self = *self - rhs;
+            }
         }
-    }
 
-    fn le(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_LE_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl Mul for $float {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                unsafe { $float($mul(self.0, rhs.0)) }
+            }
         }
-    }
 
-    fn gt(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_GT_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl MulAssign for $float {
+            fn mul_assign(&mut self, rhs: Self) {
+                *self = *self * rhs;
+            }
         }
-    }
 
-    fn ge(&self, other: &Self) -> Self::Output {
-        unsafe {
-            let res = _mm256_cmp_pd(self.0, other.0, _CMP_GE_OQ);
-            m64x4(_mm256_castpd_si256(res))
+        impl Div for $float {
+            type Output = Self;
+
+            fn div(self, rhs: Self) -> Self {
+                unsafe { $float($div(self.0, rhs.0)) }
+            }
         }
-    }
-}
 
-impl Add for f64x4 {
-    type Output = Self;
+        impl DivAssign for $float {
+            fn div_assign(&mut self, rhs: Self) {
+                *self = *self / rhs;
+            }
+        }
 
-    fn add(self, rhs: Self) -> Self {
-        unsafe { f64x4(_mm256_add_pd(self.0, rhs.0)) }
-    }
-}
+        impl Rem for $float {
+            type Output = Self;
 
-impl AddAssign for f64x4 {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
-    }
-}
+            fn rem(self, _rhs: Self) -> Self {
+                unimplemented!()
+            }
+        }
 
-impl Sub for f64x4 {
-    type Output = Self;
+        impl RemAssign for $float {
+            fn rem_assign(&mut self, _rhs: Self) {
+                unimplemented!()
+            }
+        }
 
-    fn sub(self, rhs: Self) -> Self {
-        unsafe { f64x4(_mm256_sub_pd(self.0, rhs.0)) }
-    }
-}
+        impl Neg for $float {
+            type Output = Self;
 
-impl SubAssign for f64x4 {
-    fn sub_assign(&mut self, rhs: Self) {
-        *self = *self - rhs;
-    }
-}
-
-impl Mul for f64x4 {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self {
-        unsafe { f64x4(_mm256_mul_pd(self.0, rhs.0)) }
-    }
-}
-
-impl MulAssign for f64x4 {
-    fn mul_assign(&mut self, rhs: Self) {
-        *self = *self * rhs;
-    }
-}
-
-impl Div for f64x4 {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self {
-        unsafe { f64x4(_mm256_div_pd(self.0, rhs.0)) }
-    }
-}
-
-impl DivAssign for f64x4 {
-    fn div_assign(&mut self, rhs: Self) {
-        *self = *self / rhs;
-    }
-}
-
-impl Rem for f64x4 {
-    type Output = Self;
-
-    fn rem(self, _rhs: Self) -> Self {
-        unimplemented!()
-    }
-}
-
-impl RemAssign for f64x4 {
-    fn rem_assign(&mut self, _rhs: Self) {
-        unimplemented!()
-    }
-}
-
-impl Neg for f64x4 {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        unsafe { f64x4(_mm256_sub_pd(_mm256_set1_pd(0.0), self.0)) }
-    }
+            fn neg(self) -> Self {
+                unsafe { $float($sub($set(0.0), self.0)) }
+            }
+        }
+    };
 }
 
 macro_rules! int_type {
@@ -576,6 +390,11 @@ macro_rules! impl_mask {
         )*
     };
 }
+
+float_type! { f32x8, __m256, f32, 8, m32x8, _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_cmp_ps, _mm256_castps_si256 }
+float_type! { f64x4, __m256d, f64, 4, m64x4, _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_cmp_pd, _mm256_castpd_si256 }
+impl_float! { f32x8, _mm256_set1_ps, _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps }
+impl_float! { f64x4, _mm256_set1_pd, _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd }
 
 int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
