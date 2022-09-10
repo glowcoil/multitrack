@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::*;
-use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
+use crate::{Arch, Float, Int, LanesEq, LanesOrd, Mask, Select, Simd};
 
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
@@ -165,7 +165,7 @@ macro_rules! float_type {
 
 macro_rules! impl_float {
     ($float:ident, $set:ident, $add:ident, $sub:ident, $mul:ident, $div:ident) => {
-        impl Num for $float {}
+        impl Float for $float {}
 
         impl Add for $float {
             type Output = Self;
@@ -335,7 +335,7 @@ macro_rules! int_type {
 
 macro_rules! impl_int {
     ($int:ident, $set:ident, $add:ident, $sub:ident) => {
-        impl Num for $int {}
+        impl Int for $int {}
 
         impl Add for $int {
             type Output = Self;

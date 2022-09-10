@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::*;
-use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
+use crate::{Arch, Float, Int, LanesEq, LanesOrd, Mask, Select, Simd};
 
 use core::fmt::{self, Debug};
 use core::num::Wrapping;
@@ -192,71 +192,141 @@ macro_rules! wrapping_scalar_type {
     };
 }
 
-macro_rules! impl_num {
-    ($num:ident) => {
-        impl Num for $num {}
+macro_rules! impl_float {
+    ($float:ident) => {
+        impl Float for $float {}
 
-        impl Add for $num {
+        impl Add for $float {
             type Output = Self;
 
             fn add(self, rhs: Self) -> Self {
-                $num(self.0 + rhs.0)
+                $float(self.0 + rhs.0)
             }
         }
 
-        impl AddAssign for $num {
+        impl AddAssign for $float {
             fn add_assign(&mut self, rhs: Self) {
                 self.0 += rhs.0;
             }
         }
 
-        impl Sub for $num {
+        impl Sub for $float {
             type Output = Self;
 
             fn sub(self, rhs: Self) -> Self {
-                $num(self.0 - rhs.0)
+                $float(self.0 - rhs.0)
             }
         }
 
-        impl SubAssign for $num {
+        impl SubAssign for $float {
             fn sub_assign(&mut self, rhs: Self) {
                 self.0 -= rhs.0;
             }
         }
 
-        impl Mul for $num {
+        impl Mul for $float {
             type Output = Self;
 
             fn mul(self, rhs: Self) -> Self {
-                $num(self.0 * rhs.0)
+                $float(self.0 * rhs.0)
             }
         }
 
-        impl MulAssign for $num {
+        impl MulAssign for $float {
             fn mul_assign(&mut self, rhs: Self) {
                 self.0 *= rhs.0;
             }
         }
 
-        impl Div for $num {
+        impl Div for $float {
             type Output = Self;
 
             fn div(self, rhs: Self) -> Self {
-                $num(self.0 / rhs.0)
+                $float(self.0 / rhs.0)
             }
         }
 
-        impl DivAssign for $num {
+        impl DivAssign for $float {
             fn div_assign(&mut self, rhs: Self) {
                 self.0 /= rhs.0;
             }
         }
 
-        impl Neg for $num {
+        impl Neg for $float {
             type Output = Self;
 
             fn neg(self) -> Self {
-                $num(-self.0)
+                $float(-self.0)
+            }
+        }
+    };
+}
+
+macro_rules! impl_int {
+    ($int:ident) => {
+        impl Int for $int {}
+
+        impl Add for $int {
+            type Output = Self;
+
+            fn add(self, rhs: Self) -> Self {
+                $int(self.0 + rhs.0)
+            }
+        }
+
+        impl AddAssign for $int {
+            fn add_assign(&mut self, rhs: Self) {
+                self.0 += rhs.0;
+            }
+        }
+
+        impl Sub for $int {
+            type Output = Self;
+
+            fn sub(self, rhs: Self) -> Self {
+                $int(self.0 - rhs.0)
+            }
+        }
+
+        impl SubAssign for $int {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.0 -= rhs.0;
+            }
+        }
+
+        impl Mul for $int {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                $int(self.0 * rhs.0)
+            }
+        }
+
+        impl MulAssign for $int {
+            fn mul_assign(&mut self, rhs: Self) {
+                self.0 *= rhs.0;
+            }
+        }
+
+        impl Div for $int {
+            type Output = Self;
+
+            fn div(self, rhs: Self) -> Self {
+                $int(self.0 / rhs.0)
+            }
+        }
+
+        impl DivAssign for $int {
+            fn div_assign(&mut self, rhs: Self) {
+                self.0 /= rhs.0;
+            }
+        }
+
+        impl Neg for $int {
+            type Output = Self;
+
+            fn neg(self) -> Self {
+                $int(-self.0)
             }
         }
     };
@@ -332,26 +402,26 @@ macro_rules! impl_mask {
 
 scalar_type! { f32x1, f32, m32x1 }
 scalar_type! { f64x1, f64, m64x1 }
-impl_num! { f64x1 }
-impl_num! { f32x1 }
+impl_float! { f64x1 }
+impl_float! { f32x1 }
 
 wrapping_scalar_type! { u8x1, u8, m8x1 }
 wrapping_scalar_type! { u16x1, u16, m16x1 }
 wrapping_scalar_type! { u32x1, u32, m32x1 }
 wrapping_scalar_type! { u64x1, u64, m64x1 }
-impl_num! { u8x1 }
-impl_num! { u16x1 }
-impl_num! { u32x1 }
-impl_num! { u64x1 }
+impl_int! { u8x1 }
+impl_int! { u16x1 }
+impl_int! { u32x1 }
+impl_int! { u64x1 }
 
 wrapping_scalar_type! { i8x1, i8, m8x1 }
 wrapping_scalar_type! { i16x1, i16, m16x1 }
 wrapping_scalar_type! { i32x1, i32, m32x1 }
 wrapping_scalar_type! { i64x1, i64, m64x1 }
-impl_num! { i8x1 }
-impl_num! { i16x1 }
-impl_num! { i32x1 }
-impl_num! { i64x1 }
+impl_int! { i8x1 }
+impl_int! { i16x1 }
+impl_int! { i32x1 }
+impl_int! { i64x1 }
 
 scalar_type! { m8x1, m8, m8x1 }
 scalar_type! { m16x1, m16, m16x1 }

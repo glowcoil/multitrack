@@ -16,18 +16,18 @@ where
     Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
     Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
 {
-    type f32: Simd<Elem = f32> + Num;
-    type f64: Simd<Elem = f64> + Num;
+    type f32: Simd<Elem = f32> + Float;
+    type f64: Simd<Elem = f64> + Float;
 
-    type u8: Simd<Elem = u8> + Num;
-    type u16: Simd<Elem = u16> + Num;
-    type u32: Simd<Elem = u32> + Num;
-    type u64: Simd<Elem = u64> + Num;
+    type u8: Simd<Elem = u8> + Int;
+    type u16: Simd<Elem = u16> + Int;
+    type u32: Simd<Elem = u32> + Int;
+    type u64: Simd<Elem = u64> + Int;
 
-    type i8: Simd<Elem = i8> + Num;
-    type i16: Simd<Elem = i16> + Num;
-    type i32: Simd<Elem = i32> + Num;
-    type i64: Simd<Elem = i64> + Num;
+    type i8: Simd<Elem = i8> + Int;
+    type i16: Simd<Elem = i16> + Int;
+    type i32: Simd<Elem = i32> + Int;
+    type i64: Simd<Elem = i64> + Int;
 
     type m8: Simd<Elem = m8> + Mask;
     type m16: Simd<Elem = m16> + Mask;
@@ -56,12 +56,21 @@ where
     ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]);
 }
 
-pub trait Num: Sized
+pub trait Float: Sized
 where
     Self: Add<Output = Self> + AddAssign,
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
     Self: Div<Output = Self> + DivAssign,
+    Self: Neg,
+{
+}
+
+pub trait Int: Sized
+where
+    Self: Add<Output = Self> + AddAssign,
+    Self: Sub<Output = Self> + SubAssign,
+    Self: Mul<Output = Self> + MulAssign,
     Self: Neg,
 {
 }
