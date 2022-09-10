@@ -38,7 +38,11 @@ impl Arch for Avx2 {
 }
 
 macro_rules! float_type {
-    ($float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident, $set:ident, $load:ident, $store:ident, $cmp:ident, $cast:ident) => {
+    (
+        $float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident,
+        $set:ident, $load:ident, $store:ident, $cmp:ident, $cast:ident,
+        $add:ident, $sub:ident, $mul:ident, $div:ident,
+    ) => {
         #[derive(Copy, Clone)]
         #[repr(transparent)]
         pub struct $float($inner);
@@ -160,11 +164,7 @@ macro_rules! float_type {
                 &mut self.as_mut_slice()[index]
             }
         }
-    };
-}
 
-macro_rules! impl_float {
-    ($float:ident, $set:ident, $add:ident, $sub:ident, $mul:ident, $div:ident) => {
         impl Float for $float {}
 
         impl Add for $float {
@@ -326,6 +326,61 @@ macro_rules! int_type {
                 &mut self.as_mut_slice()[index]
             }
         }
+
+        impl Bitwise for $int {}
+
+        impl BitAnd for $int {
+            type Output = Self;
+
+            fn bitand(self, rhs: Self) -> Self::Output {
+                unsafe { $int(_mm256_and_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitAndAssign for $int {
+            fn bitand_assign(&mut self, rhs: Self) {
+                *self = *self & rhs;
+            }
+        }
+
+        impl BitOr for $int {
+            type Output = Self;
+
+            fn bitor(self, rhs: Self) -> Self::Output {
+                unsafe { $int(_mm256_or_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitOrAssign for $int {
+            fn bitor_assign(&mut self, rhs: Self) {
+                *self = *self | rhs;
+            }
+        }
+
+        impl BitXor for $int {
+            type Output = Self;
+
+            fn bitxor(self, rhs: Self) -> Self::Output {
+                unsafe { $int(_mm256_xor_si256(self.0, rhs.0)) }
+            }
+        }
+
+        impl BitXorAssign for $int {
+            fn bitxor_assign(&mut self, rhs: Self) {
+                *self = *self ^ rhs;
+            }
+        }
+
+        impl Not for $int {
+            type Output = Self;
+
+            fn not(self) -> Self::Output {
+                unsafe {
+                    let zero = _mm256_setzero_si256();
+                    $int(_mm256_andnot_si256(self.0, _mm256_cmpeq_epi8(zero, zero)))
+                }
+            }
+        }
     };
 }
 
@@ -399,65 +454,6 @@ macro_rules! impl_int {
     };
 }
 
-macro_rules! impl_bitwise {
-    ($bitwise:ident) => {
-        impl Bitwise for $bitwise {}
-
-        impl BitAnd for $bitwise {
-            type Output = Self;
-
-            fn bitand(self, rhs: Self) -> Self::Output {
-                unsafe { $bitwise(_mm256_and_si256(self.0, rhs.0)) }
-            }
-        }
-
-        impl BitAndAssign for $bitwise {
-            fn bitand_assign(&mut self, rhs: Self) {
-                *self = *self & rhs;
-            }
-        }
-
-        impl BitOr for $bitwise {
-            type Output = Self;
-
-            fn bitor(self, rhs: Self) -> Self::Output {
-                unsafe { $bitwise(_mm256_or_si256(self.0, rhs.0)) }
-            }
-        }
-
-        impl BitOrAssign for $bitwise {
-            fn bitor_assign(&mut self, rhs: Self) {
-                *self = *self | rhs;
-            }
-        }
-
-        impl BitXor for $bitwise {
-            type Output = Self;
-
-            fn bitxor(self, rhs: Self) -> Self::Output {
-                unsafe { $bitwise(_mm256_xor_si256(self.0, rhs.0)) }
-            }
-        }
-
-        impl BitXorAssign for $bitwise {
-            fn bitxor_assign(&mut self, rhs: Self) {
-                *self = *self ^ rhs;
-            }
-        }
-
-        impl Not for $bitwise {
-            type Output = Self;
-
-            fn not(self) -> Self::Output {
-                unsafe {
-                    let zero = _mm256_setzero_si256();
-                    $bitwise(_mm256_andnot_si256(self.0, _mm256_cmpeq_epi8(zero, zero)))
-                }
-            }
-        }
-    };
-}
-
 macro_rules! impl_select {
     ($mask:ident, { $($select:ident),* }) => {
         $(
@@ -470,10 +466,16 @@ macro_rules! impl_select {
     };
 }
 
-float_type! { f32x8, __m256, f32, 8, m32x8, _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_cmp_ps, _mm256_castps_si256 }
-float_type! { f64x4, __m256d, f64, 4, m64x4, _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_cmp_pd, _mm256_castpd_si256 }
-impl_float! { f32x8, _mm256_set1_ps, _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps }
-impl_float! { f64x4, _mm256_set1_pd, _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd }
+float_type! {
+    f32x8, __m256, f32, 8, m32x8,
+    _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_cmp_ps, _mm256_castps_si256,
+    _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps,
+}
+float_type! {
+    f64x4, __m256d, f64, 4, m64x4,
+    _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_cmp_pd, _mm256_castpd_si256,
+    _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd,
+}
 
 int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
@@ -483,10 +485,6 @@ impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_bitwise! { u8x32 }
-impl_bitwise! { u16x16 }
-impl_bitwise! { u32x8 }
-impl_bitwise! { u64x4 }
 
 int_type! { i8x32, i8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { i16x16, i16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
@@ -496,19 +494,11 @@ impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_bitwise! { i8x32 }
-impl_bitwise! { i16x16 }
-impl_bitwise! { i32x8 }
-impl_bitwise! { i64x4 }
 
 int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { m32x8, m32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { m64x4, m64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
-impl_bitwise! { m8x32 }
-impl_bitwise! { m16x16 }
-impl_bitwise! { m32x8 }
-impl_bitwise! { m64x4 }
 impl_select! { m8x32, { m8x32, u8x32, i8x32 } }
 impl_select! { m16x16, { m16x16, u16x16, i16x16 } }
 impl_select! { m32x8, { m32x8, u32x8, i32x8 } }
