@@ -5,9 +5,7 @@ use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
 
 use core::fmt::{self, Debug};
 use core::num::Wrapping;
-use core::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
-};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 use core::slice;
@@ -251,20 +249,6 @@ macro_rules! impl_num {
         impl DivAssign for $num {
             fn div_assign(&mut self, rhs: Self) {
                 self.0 /= rhs.0;
-            }
-        }
-
-        impl Rem for $num {
-            type Output = Self;
-
-            fn rem(self, rhs: Self) -> Self {
-                $num(self.0 % rhs.0)
-            }
-        }
-
-        impl RemAssign for $num {
-            fn rem_assign(&mut self, rhs: Self) {
-                self.0 %= rhs.0;
             }
         }
 

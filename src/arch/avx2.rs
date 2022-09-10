@@ -9,9 +9,7 @@ use std::arch::x86::*;
 use std::arch::x86_64::*;
 
 use core::fmt::{self, Debug};
-use core::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
-};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 use std::mem;
@@ -225,20 +223,6 @@ macro_rules! impl_float {
             }
         }
 
-        impl Rem for $float {
-            type Output = Self;
-
-            fn rem(self, _rhs: Self) -> Self {
-                unimplemented!()
-            }
-        }
-
-        impl RemAssign for $float {
-            fn rem_assign(&mut self, _rhs: Self) {
-                unimplemented!()
-            }
-        }
-
         impl Neg for $float {
             type Output = Self;
 
@@ -406,20 +390,6 @@ macro_rules! impl_int {
         impl DivAssign for $int {
             fn div_assign(&mut self, rhs: Self) {
                 *self = *self / rhs;
-            }
-        }
-
-        impl Rem for $int {
-            type Output = Self;
-
-            fn rem(self, _rhs: Self) -> Self {
-                unimplemented!()
-            }
-        }
-
-        impl RemAssign for $int {
-            fn rem_assign(&mut self, _rhs: Self) {
-                unimplemented!()
             }
         }
 

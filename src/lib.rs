@@ -1,7 +1,5 @@
 use core::fmt::Debug;
-use core::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
-};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 
@@ -64,7 +62,6 @@ where
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
     Self: Div<Output = Self> + DivAssign,
-    Self: Rem<Output = Self> + RemAssign,
     Self: Neg,
 {
 }
