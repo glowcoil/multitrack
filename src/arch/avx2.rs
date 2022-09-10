@@ -40,8 +40,8 @@ impl Arch for Avx2 {
 macro_rules! float_type {
     (
         $float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident,
-        $set:ident, $load:ident, $store:ident, $cmp:ident, $cast:ident,
-        $add:ident, $sub:ident, $mul:ident, $div:ident,
+        $set:ident, $load:ident, $store:ident, $cast_to_int:ident, $cast_from_int:ident, $blend:ident,
+        $cmp:ident, $min:ident, $max:ident, $add:ident, $sub:ident, $mul:ident, $div:ident,
     ) => {
         #[derive(Copy, Clone)]
         #[repr(transparent)]
@@ -109,14 +109,14 @@ macro_rules! float_type {
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_EQ_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
             }
 
             fn ne(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_NEQ_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
             }
         }
@@ -125,29 +125,37 @@ macro_rules! float_type {
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_LT_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
             }
 
             fn le(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_LE_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
             }
 
             fn gt(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_GT_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
             }
 
             fn ge(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_GE_OQ);
-                    $mask($cast(res))
+                    $mask($cast_to_int(res))
                 }
+            }
+
+            fn max(self, other: Self) -> Self {
+                unsafe { $float($min(self.0, other.0)) }
+            }
+
+            fn min(self, other: Self) -> Self {
+                unsafe { $float($max(self.0, other.0)) }
             }
         }
 
@@ -162,6 +170,15 @@ macro_rules! float_type {
         impl IndexMut<usize> for $float {
             fn index_mut(&mut self, index: usize) -> &mut Self::Output {
                 &mut self.as_mut_slice()[index]
+            }
+        }
+
+        impl Select<$float> for $mask {
+            fn select(self, if_true: $float, if_false: $float) -> $float {
+                unsafe {
+                    let mask = $cast_from_int(self.0);
+                    $float($blend(if_false.0, if_true.0, mask))
+                }
             }
         }
 
@@ -381,6 +398,12 @@ macro_rules! int_type {
                 }
             }
         }
+
+        impl Select<$int> for $mask {
+            fn select(self, if_true: $int, if_false: $int) -> $int {
+                unsafe { $int(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+            }
+        }
     };
 }
 
@@ -454,27 +477,15 @@ macro_rules! impl_int {
     };
 }
 
-macro_rules! impl_select {
-    ($mask:ident, { $($select:ident),* }) => {
-        $(
-            impl Select<$select> for $mask {
-                fn select(self, if_true: $select, if_false: $select) -> $select {
-                    unsafe { $select(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
-                }
-            }
-        )*
-    };
-}
-
 float_type! {
     f32x8, __m256, f32, 8, m32x8,
-    _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_cmp_ps, _mm256_castps_si256,
-    _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps,
+    _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_castps_si256, _mm256_castsi256_ps, _mm256_blendv_ps,
+    _mm256_cmp_ps, _mm256_min_ps, _mm256_max_ps, _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps,
 }
 float_type! {
     f64x4, __m256d, f64, 4, m64x4,
-    _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_cmp_pd, _mm256_castpd_si256,
-    _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd,
+    _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_castpd_si256, _mm256_castsi256_pd, _mm256_blendv_pd,
+    _mm256_cmp_pd, _mm256_min_pd, _mm256_max_pd, _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd,
 }
 
 int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
@@ -499,28 +510,6 @@ int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { m32x8, m32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { m64x4, m64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
-impl_select! { m8x32, { m8x32, u8x32, i8x32 } }
-impl_select! { m16x16, { m16x16, u16x16, i16x16 } }
-impl_select! { m32x8, { m32x8, u32x8, i32x8 } }
-impl_select! { m64x4, { m64x4, u64x4, i64x4 } }
-
-impl Select<f32x8> for m32x8 {
-    fn select(self, if_true: f32x8, if_false: f32x8) -> f32x8 {
-        unsafe {
-            let mask = _mm256_castsi256_ps(self.0);
-            f32x8(_mm256_blendv_ps(if_false.0, if_true.0, mask))
-        }
-    }
-}
-
-impl Select<f64x4> for m64x4 {
-    fn select(self, if_true: f64x4, if_false: f64x4) -> f64x4 {
-        unsafe {
-            let mask = _mm256_castsi256_pd(self.0);
-            f64x4(_mm256_blendv_pd(if_false.0, if_true.0, mask))
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
