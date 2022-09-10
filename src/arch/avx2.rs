@@ -413,19 +413,19 @@ impl Neg for f64x4 {
     }
 }
 
-macro_rules! mask_type {
-    ($mask:ident, $elem:ident, $lanes:literal, $set:ident, $cmp:ident) => {
+macro_rules! int_type {
+    ($int:ident, $elem:ident, $lanes:literal, $mask:ident, $set:ident, $cmp:ident) => {
         #[derive(Copy, Clone)]
         #[repr(transparent)]
-        pub struct $mask(__m256i);
+        pub struct $int(__m256i);
 
-        impl Simd for $mask {
+        impl Simd for $int {
             type Elem = $elem;
 
             const LANES: usize = $lanes;
 
             fn new(elem: Self::Elem) -> Self {
-                unsafe { $mask($set(mem::transmute(elem))) }
+                unsafe { $int($set(mem::transmute(elem))) }
             }
 
             fn as_slice(&self) -> &[Self::Elem] {
@@ -442,7 +442,7 @@ macro_rules! mask_type {
 
             fn from_slice(slice: &[Self::Elem]) -> Self {
                 assert!(slice.len() == Self::LANES);
-                unsafe { $mask(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
+                unsafe { $int(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
             }
 
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
@@ -463,19 +463,19 @@ macro_rules! mask_type {
             }
         }
 
-        impl Debug for $mask {
+        impl Debug for $int {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 Debug::fmt(self.as_slice(), fmt)
             }
         }
 
-        impl Default for $mask {
+        impl Default for $int {
             fn default() -> Self {
                 unsafe { mem::zeroed() }
             }
         }
 
-        impl LanesEq for $mask {
+        impl LanesEq for $int {
             type Output = $mask;
 
             fn eq(&self, other: &Self) -> Self::Output {
@@ -487,7 +487,7 @@ macro_rules! mask_type {
             }
         }
 
-        impl LanesOrd for $mask {
+        impl LanesOrd for $int {
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
             }
@@ -497,7 +497,7 @@ macro_rules! mask_type {
             }
         }
 
-        impl Index<usize> for $mask {
+        impl Index<usize> for $int {
             type Output = <Self as Simd>::Elem;
 
             fn index(&self, index: usize) -> &Self::Output {
@@ -505,12 +505,16 @@ macro_rules! mask_type {
             }
         }
 
-        impl IndexMut<usize> for $mask {
+        impl IndexMut<usize> for $int {
             fn index_mut(&mut self, index: usize) -> &mut Self::Output {
                 &mut self.as_mut_slice()[index]
             }
         }
+    };
+}
 
+macro_rules! impl_mask {
+    ($mask:ident, { $($select:ident),* }) => {
         impl Mask for $mask {}
 
         impl BitAnd for $mask {
@@ -563,18 +567,34 @@ macro_rules! mask_type {
             }
         }
 
-        impl Select<$mask> for $mask {
-            fn select(self, if_true: $mask, if_false: $mask) -> $mask {
-                unsafe { $mask(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+        $(
+            impl Select<$select> for $mask {
+                fn select(self, if_true: $select, if_false: $select) -> $select {
+                    unsafe { $select(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+                }
             }
-        }
+        )*
     };
 }
 
-mask_type! { m8x32, m8, 32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
-mask_type! { m16x16, m16, 16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
-mask_type! { m32x8, m32, 8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
-mask_type! { m64x4, m64, 4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
+int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
+int_type! { u32x8, u32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
+int_type! { u64x4, u64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+
+int_type! { i8x32, i8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
+int_type! { i16x16, i16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
+int_type! { i32x8, i32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
+int_type! { i64x4, i64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+
+int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
+int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
+int_type! { m32x8, m32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
+int_type! { m64x4, m64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_mask! { m8x32, { m8x32, u8x32, i8x32 } }
+impl_mask! { m16x16, { m16x16, u16x16, i16x16 } }
+impl_mask! { m32x8, { m32x8, u32x8, i32x8 } }
+impl_mask! { m64x4, { m64x4, u64x4, i64x4 } }
 
 impl Select<f32x8> for m32x8 {
     fn select(self, if_true: f32x8, if_false: f32x8) -> f32x8 {
