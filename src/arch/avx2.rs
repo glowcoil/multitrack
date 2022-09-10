@@ -311,10 +311,6 @@ macro_rules! int_type {
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
             }
-
-            fn gt(&self, other: &Self) -> Self::Output {
-                unsafe { $mask(_mm256_andnot_si256(other.0, self.0)) }
-            }
         }
 
         impl Index<usize> for $int {

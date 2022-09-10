@@ -98,15 +98,15 @@ pub trait LanesOrd<Rhs = Self>: LanesEq<Rhs> {
     fn lt(&self, other: &Self) -> Self::Output;
 
     fn le(&self, other: &Self) -> Self::Output {
-        self.lt(other) | self.eq(other)
+        !self.gt(other)
     }
 
     fn gt(&self, other: &Self) -> Self::Output {
-        !self.le(other)
+        other.lt(self)
     }
 
     fn ge(&self, other: &Self) -> Self::Output {
-        !self.lt(other)
+        other.le(self)
     }
 
     fn max(self, other: Self) -> Self {
