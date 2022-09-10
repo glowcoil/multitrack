@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::*;
-use crate::{LanesEq, LanesOrd, Mask, Num, Select, Simd};
+use crate::{Arch, LanesEq, LanesOrd, Mask, Num, Select, Simd};
 
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
@@ -16,6 +16,28 @@ use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, 
 use core::ops::{Index, IndexMut};
 use std::mem;
 use std::slice;
+
+pub struct Avx2;
+
+impl Arch for Avx2 {
+    type f32 = f32x8;
+    type f64 = f64x4;
+
+    type u8 = u8x32;
+    type u16 = u16x16;
+    type u32 = u32x8;
+    type u64 = u64x4;
+
+    type i8 = i8x32;
+    type i16 = i16x16;
+    type i32 = i32x8;
+    type i64 = i64x4;
+
+    type m8 = m8x32;
+    type m16 = m16x16;
+    type m32 = m32x8;
+    type m64 = m64x4;
+}
 
 macro_rules! float_type {
     ($float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident, $set:ident, $load:ident, $store:ident, $cmp:ident, $cast:ident) => {
