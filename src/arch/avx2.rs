@@ -327,6 +327,90 @@ macro_rules! int_type {
     };
 }
 
+macro_rules! impl_int {
+    ($int:ident, $set:ident, $add:ident, $sub:ident) => {
+        impl Num for $int {}
+
+        impl Add for $int {
+            type Output = Self;
+
+            fn add(self, rhs: Self) -> Self {
+                unsafe { $int($add(self.0, rhs.0)) }
+            }
+        }
+
+        impl AddAssign for $int {
+            fn add_assign(&mut self, rhs: Self) {
+                *self = *self + rhs;
+            }
+        }
+
+        impl Sub for $int {
+            type Output = Self;
+
+            fn sub(self, rhs: Self) -> Self {
+                unsafe { $int($sub(self.0, rhs.0)) }
+            }
+        }
+
+        impl SubAssign for $int {
+            fn sub_assign(&mut self, rhs: Self) {
+                *self = *self - rhs;
+            }
+        }
+
+        impl Mul for $int {
+            type Output = Self;
+
+            fn mul(self, _rhs: Self) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl MulAssign for $int {
+            fn mul_assign(&mut self, rhs: Self) {
+                *self = *self * rhs;
+            }
+        }
+
+        impl Div for $int {
+            type Output = Self;
+
+            fn div(self, _rhs: Self) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl DivAssign for $int {
+            fn div_assign(&mut self, rhs: Self) {
+                *self = *self / rhs;
+            }
+        }
+
+        impl Rem for $int {
+            type Output = Self;
+
+            fn rem(self, _rhs: Self) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl RemAssign for $int {
+            fn rem_assign(&mut self, _rhs: Self) {
+                unimplemented!()
+            }
+        }
+
+        impl Neg for $int {
+            type Output = Self;
+
+            fn neg(self) -> Self {
+                unsafe { $int($sub($set(0), self.0)) }
+            }
+        }
+    };
+}
+
 macro_rules! impl_mask {
     ($mask:ident, { $($select:ident),* }) => {
         impl Mask for $mask {}
@@ -400,11 +484,19 @@ int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { u32x8, u32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { u64x4, u64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
 
 int_type! { i8x32, i8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { i16x16, i16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { i32x8, i32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { i64x4, i64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
 
 int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
