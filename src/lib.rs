@@ -16,6 +16,9 @@ where
     Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
     Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
 {
+    type f32: Simd<Elem = f32> + Num;
+    type f64: Simd<Elem = f64> + Num;
+
     type u8: Simd<Elem = u8> + Num;
     type u16: Simd<Elem = u16> + Num;
     type u32: Simd<Elem = u32> + Num;
@@ -25,9 +28,6 @@ where
     type i16: Simd<Elem = i16> + Num;
     type i32: Simd<Elem = i32> + Num;
     type i64: Simd<Elem = i64> + Num;
-
-    type f32: Simd<Elem = f32> + Num;
-    type f64: Simd<Elem = f64> + Num;
 
     type m8: Simd<Elem = m8> + Mask;
     type m16: Simd<Elem = m16> + Mask;
