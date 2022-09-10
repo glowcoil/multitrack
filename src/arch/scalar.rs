@@ -109,6 +109,16 @@ macro_rules! scalar_type {
                 fmt.debug_list().entry(&self.0).finish()
             }
         }
+
+        impl Select<$scalar> for $mask {
+            fn select(self, if_true: $scalar, if_false: $scalar) -> $scalar {
+                if self.0.into() {
+                    if_true
+                } else {
+                    if_false
+                }
+            }
+        }
     };
 }
 
@@ -187,6 +197,16 @@ macro_rules! wrapping_scalar_type {
         impl Debug for $scalar {
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt.debug_list().entry(&self.0 .0).finish()
+            }
+        }
+
+        impl Select<$scalar> for $mask {
+            fn select(self, if_true: $scalar, if_false: $scalar) -> $scalar {
+                if self.0.into() {
+                    if_true
+                } else {
+                    if_false
+                }
             }
         }
     };
@@ -388,22 +408,6 @@ macro_rules! impl_bitwise {
     };
 }
 
-macro_rules! impl_select {
-    ($mask:ident, { $($select:ident),* }) => {
-        $(
-            impl Select<$select> for $mask {
-                fn select(self, if_true: $select, if_false: $select) -> $select {
-                    if self.0.into() {
-                        if_true
-                    } else {
-                        if_false
-                    }
-                }
-            }
-        )*
-    };
-}
-
 scalar_type! { f32x1, f32, m32x1 }
 scalar_type! { f64x1, f64, m64x1 }
 impl_float! { f64x1 }
@@ -443,7 +447,3 @@ impl_bitwise! { m8x1 }
 impl_bitwise! { m16x1 }
 impl_bitwise! { m32x1 }
 impl_bitwise! { m64x1 }
-impl_select! { m8x1, { u8x1, i8x1, m8x1 } }
-impl_select! { m16x1, { u16x1, i16x1, m16x1 } }
-impl_select! { m32x1, { u32x1, i32x1, m32x1, f32x1 } }
-impl_select! { m64x1, { u64x1, i64x1, m64x1, f64x1 } }
