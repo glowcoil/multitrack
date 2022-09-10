@@ -449,7 +449,10 @@ macro_rules! impl_bitwise {
             type Output = Self;
 
             fn not(self) -> Self::Output {
-                unsafe { $bitwise(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
+                unsafe {
+                    let zero = _mm256_setzero_si256();
+                    $bitwise(_mm256_andnot_si256(self.0, _mm256_cmpeq_epi8(zero, zero)))
+                }
             }
         }
     };
