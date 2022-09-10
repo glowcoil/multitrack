@@ -12,6 +12,28 @@ use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, 
 use core::ops::{Index, IndexMut};
 use core::slice;
 
+pub struct Scalar;
+
+impl Arch for Scalar {
+    type f32 = f32x1;
+    type f64 = f64x1;
+
+    type u8 = u8x1;
+    type u16 = u16x1;
+    type u32 = u32x1;
+    type u64 = u64x1;
+
+    type i8 = i8x1;
+    type i16 = i16x1;
+    type i32 = i32x1;
+    type i64 = i64x1;
+
+    type m8 = m8x1;
+    type m16 = m16x1;
+    type m32 = m32x1;
+    type m64 = m64x1;
+}
+
 macro_rules! scalar_type {
     ($scalar:ident, $inner:ident, $mask:ident) => {
         #[derive(Copy, Clone, Default)]
@@ -322,28 +344,6 @@ macro_rules! impl_mask {
             }
         )*
     };
-}
-
-pub struct Scalar;
-
-impl Arch for Scalar {
-    type f32 = f32x1;
-    type f64 = f64x1;
-
-    type u8 = u8x1;
-    type u16 = u16x1;
-    type u32 = u32x1;
-    type u64 = u64x1;
-
-    type i8 = i8x1;
-    type i16 = i16x1;
-    type i32 = i32x1;
-    type i64 = i64x1;
-
-    type m8 = m8x1;
-    type m16 = m16x1;
-    type m32 = m32x1;
-    type m64 = m64x1;
 }
 
 scalar_type! { f32x1, f32, m32x1 }
