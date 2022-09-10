@@ -19,20 +19,20 @@ where
     type f32: Simd<Elem = f32> + Float;
     type f64: Simd<Elem = f64> + Float;
 
-    type u8: Simd<Elem = u8> + Int;
-    type u16: Simd<Elem = u16> + Int;
-    type u32: Simd<Elem = u32> + Int;
-    type u64: Simd<Elem = u64> + Int;
+    type u8: Simd<Elem = u8> + Int + Bitwise;
+    type u16: Simd<Elem = u16> + Int + Bitwise;
+    type u32: Simd<Elem = u32> + Int + Bitwise;
+    type u64: Simd<Elem = u64> + Int + Bitwise;
 
-    type i8: Simd<Elem = i8> + Int;
-    type i16: Simd<Elem = i16> + Int;
-    type i32: Simd<Elem = i32> + Int;
-    type i64: Simd<Elem = i64> + Int;
+    type i8: Simd<Elem = i8> + Int + Bitwise;
+    type i16: Simd<Elem = i16> + Int + Bitwise;
+    type i32: Simd<Elem = i32> + Int + Bitwise;
+    type i64: Simd<Elem = i64> + Int + Bitwise;
 
-    type m8: Simd<Elem = m8> + Mask;
-    type m16: Simd<Elem = m16> + Mask;
-    type m32: Simd<Elem = m32> + Mask;
-    type m64: Simd<Elem = m64> + Mask;
+    type m8: Simd<Elem = m8> + Bitwise;
+    type m16: Simd<Elem = m16> + Bitwise;
+    type m32: Simd<Elem = m32> + Bitwise;
+    type m64: Simd<Elem = m64> + Bitwise;
 }
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
@@ -75,7 +75,7 @@ where
 {
 }
 
-pub trait Mask: Sized
+pub trait Bitwise: Sized
 where
     Self: BitAnd<Output = Self> + BitAndAssign,
     Self: BitOr<Output = Self> + BitOrAssign,
@@ -85,7 +85,7 @@ where
 }
 
 pub trait LanesEq<Rhs = Self>: Sized {
-    type Output: Mask + Select<Self>;
+    type Output: Bitwise + Select<Self>;
 
     fn eq(&self, other: &Self) -> Self::Output;
 

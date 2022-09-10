@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::*;
-use crate::{Arch, Float, Int, LanesEq, LanesOrd, Mask, Select, Simd};
+use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 use core::fmt::{self, Debug};
 use core::num::Wrapping;
@@ -332,60 +332,64 @@ macro_rules! impl_int {
     };
 }
 
-macro_rules! impl_mask {
-    ($mask:ident, { $($select:ident),* }) => {
-        impl Mask for $mask {}
+macro_rules! impl_bitwise {
+    ($bitwise:ident) => {
+        impl Bitwise for $bitwise {}
 
-        impl BitAnd for $mask {
+        impl BitAnd for $bitwise {
             type Output = Self;
 
             fn bitand(self, rhs: Self) -> Self::Output {
-                $mask(self.0 & rhs.0)
+                $bitwise(self.0 & rhs.0)
             }
         }
 
-        impl BitAndAssign for $mask {
+        impl BitAndAssign for $bitwise {
             fn bitand_assign(&mut self, rhs: Self) {
                 self.0 &= rhs.0;
             }
         }
 
-        impl BitOr for $mask {
+        impl BitOr for $bitwise {
             type Output = Self;
 
             fn bitor(self, rhs: Self) -> Self::Output {
-                $mask(self.0 | rhs.0)
+                $bitwise(self.0 | rhs.0)
             }
         }
 
-        impl BitOrAssign for $mask {
+        impl BitOrAssign for $bitwise {
             fn bitor_assign(&mut self, rhs: Self) {
                 self.0 |= rhs.0;
             }
         }
 
-        impl BitXor for $mask {
+        impl BitXor for $bitwise {
             type Output = Self;
 
             fn bitxor(self, rhs: Self) -> Self::Output {
-                $mask(self.0 ^ rhs.0)
+                $bitwise(self.0 ^ rhs.0)
             }
         }
 
-        impl BitXorAssign for $mask {
+        impl BitXorAssign for $bitwise {
             fn bitxor_assign(&mut self, rhs: Self) {
                 self.0 ^= rhs.0;
             }
         }
 
-        impl Not for $mask {
+        impl Not for $bitwise {
             type Output = Self;
 
             fn not(self) -> Self::Output {
-                $mask(!self.0)
+                $bitwise(!self.0)
             }
         }
+    };
+}
 
+macro_rules! impl_select {
+    ($mask:ident, { $($select:ident),* }) => {
         $(
             impl Select<$select> for $mask {
                 fn select(self, if_true: $select, if_false: $select) -> $select {
@@ -413,6 +417,10 @@ impl_int! { u8x1 }
 impl_int! { u16x1 }
 impl_int! { u32x1 }
 impl_int! { u64x1 }
+impl_bitwise! { u8x1 }
+impl_bitwise! { u16x1 }
+impl_bitwise! { u32x1 }
+impl_bitwise! { u64x1 }
 
 wrapping_scalar_type! { i8x1, i8, m8x1 }
 wrapping_scalar_type! { i16x1, i16, m16x1 }
@@ -422,12 +430,20 @@ impl_int! { i8x1 }
 impl_int! { i16x1 }
 impl_int! { i32x1 }
 impl_int! { i64x1 }
+impl_bitwise! { i8x1 }
+impl_bitwise! { i16x1 }
+impl_bitwise! { i32x1 }
+impl_bitwise! { i64x1 }
 
 scalar_type! { m8x1, m8, m8x1 }
 scalar_type! { m16x1, m16, m16x1 }
 scalar_type! { m32x1, m32, m32x1 }
 scalar_type! { m64x1, m64, m64x1 }
-impl_mask! { m8x1, { u8x1, i8x1, m8x1 } }
-impl_mask! { m16x1, { u16x1, i16x1, m16x1 } }
-impl_mask! { m32x1, { u32x1, i32x1, m32x1, f32x1 } }
-impl_mask! { m64x1, { u64x1, i64x1, m64x1, f64x1 } }
+impl_bitwise! { m8x1 }
+impl_bitwise! { m16x1 }
+impl_bitwise! { m32x1 }
+impl_bitwise! { m64x1 }
+impl_select! { m8x1, { u8x1, i8x1, m8x1 } }
+impl_select! { m16x1, { u16x1, i16x1, m16x1 } }
+impl_select! { m32x1, { u32x1, i32x1, m32x1, f32x1 } }
+impl_select! { m64x1, { u64x1, i64x1, m64x1, f64x1 } }

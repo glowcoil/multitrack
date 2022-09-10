@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use crate::mask::*;
-use crate::{Arch, Float, Int, LanesEq, LanesOrd, Mask, Select, Simd};
+use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
@@ -403,60 +403,64 @@ macro_rules! impl_int {
     };
 }
 
-macro_rules! impl_mask {
-    ($mask:ident, { $($select:ident),* }) => {
-        impl Mask for $mask {}
+macro_rules! impl_bitwise {
+    ($bitwise:ident) => {
+        impl Bitwise for $bitwise {}
 
-        impl BitAnd for $mask {
+        impl BitAnd for $bitwise {
             type Output = Self;
 
             fn bitand(self, rhs: Self) -> Self::Output {
-                unsafe { $mask(_mm256_and_si256(self.0, rhs.0)) }
+                unsafe { $bitwise(_mm256_and_si256(self.0, rhs.0)) }
             }
         }
 
-        impl BitAndAssign for $mask {
+        impl BitAndAssign for $bitwise {
             fn bitand_assign(&mut self, rhs: Self) {
                 *self = *self & rhs;
             }
         }
 
-        impl BitOr for $mask {
+        impl BitOr for $bitwise {
             type Output = Self;
 
             fn bitor(self, rhs: Self) -> Self::Output {
-                unsafe { $mask(_mm256_or_si256(self.0, rhs.0)) }
+                unsafe { $bitwise(_mm256_or_si256(self.0, rhs.0)) }
             }
         }
 
-        impl BitOrAssign for $mask {
+        impl BitOrAssign for $bitwise {
             fn bitor_assign(&mut self, rhs: Self) {
                 *self = *self | rhs;
             }
         }
 
-        impl BitXor for $mask {
+        impl BitXor for $bitwise {
             type Output = Self;
 
             fn bitxor(self, rhs: Self) -> Self::Output {
-                unsafe { $mask(_mm256_xor_si256(self.0, rhs.0)) }
+                unsafe { $bitwise(_mm256_xor_si256(self.0, rhs.0)) }
             }
         }
 
-        impl BitXorAssign for $mask {
+        impl BitXorAssign for $bitwise {
             fn bitxor_assign(&mut self, rhs: Self) {
                 *self = *self ^ rhs;
             }
         }
 
-        impl Not for $mask {
+        impl Not for $bitwise {
             type Output = Self;
 
             fn not(self) -> Self::Output {
-                unsafe { $mask(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
+                unsafe { $bitwise(_mm256_andnot_si256(self.0, _mm256_set1_epi8(!0))) }
             }
         }
+    };
+}
 
+macro_rules! impl_select {
+    ($mask:ident, { $($select:ident),* }) => {
         $(
             impl Select<$select> for $mask {
                 fn select(self, if_true: $select, if_false: $select) -> $select {
@@ -480,6 +484,10 @@ impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_bitwise! { u8x32 }
+impl_bitwise! { u16x16 }
+impl_bitwise! { u32x8 }
+impl_bitwise! { u64x4 }
 
 int_type! { i8x32, i8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { i16x16, i16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
@@ -489,15 +497,23 @@ impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_bitwise! { i8x32 }
+impl_bitwise! { i16x16 }
+impl_bitwise! { i32x8 }
+impl_bitwise! { i64x4 }
 
 int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { m32x8, m32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { m64x4, m64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
-impl_mask! { m8x32, { m8x32, u8x32, i8x32 } }
-impl_mask! { m16x16, { m16x16, u16x16, i16x16 } }
-impl_mask! { m32x8, { m32x8, u32x8, i32x8 } }
-impl_mask! { m64x4, { m64x4, u64x4, i64x4 } }
+impl_bitwise! { m8x32 }
+impl_bitwise! { m16x16 }
+impl_bitwise! { m32x8 }
+impl_bitwise! { m64x4 }
+impl_select! { m8x32, { m8x32, u8x32, i8x32 } }
+impl_select! { m16x16, { m16x16, u16x16, i16x16 } }
+impl_select! { m32x8, { m32x8, u32x8, i32x8 } }
+impl_select! { m64x4, { m64x4, u64x4, i64x4 } }
 
 impl Select<f32x8> for m32x8 {
     fn select(self, if_true: f32x8, if_false: f32x8) -> f32x8 {
