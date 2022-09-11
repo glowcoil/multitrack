@@ -512,7 +512,7 @@ macro_rules! impl_int {
 }
 
 macro_rules! impl_int_mul {
-    ($int8:ident, $int16:ident, $int32:ident, $int64:ident, $mul64:ident) => {
+    ($int8:ident, $int16:ident, $int32:ident, $int64:ident) => {
         impl Mul for $int8 {
             type Output = Self;
 
@@ -551,7 +551,7 @@ macro_rules! impl_int_mul {
                 unsafe {
                     let low_high = _mm256_mullo_epi32(self.0, _mm256_slli_epi64(rhs.0, 32));
                     let high_low = _mm256_mullo_epi32(rhs.0, _mm256_slli_epi64(self.0, 32));
-                    let low_low = $mul64(self.0, rhs.0);
+                    let low_low = _mm256_mul_epu32(self.0, rhs.0);
                     let high = _mm256_add_epi32(low_high, high_low);
                     $int64(_mm256_add_epi32(low_low, high))
                 }
@@ -582,7 +582,7 @@ impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
 impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
-impl_int_mul! { u8x32, u16x16, u32x8, u64x4, _mm256_mul_epu32 }
+impl_int_mul! { u8x32, u16x16, u32x8, u64x4 }
 
 // AVX2 lacks unsigned integer compares, but it does have unsigned integer min/max for 8, 16, and
 // 32 bits. The impl_ord_uint macro thus implements le in terms of min and cmpeq. However, 64-bit
@@ -612,7 +612,7 @@ impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
 impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
 impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
-impl_int_mul! { i8x32, i16x16, i32x8, i64x4, _mm256_mul_epi32 }
+impl_int_mul! { i8x32, i16x16, i32x8, i64x4 }
 
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
 // back to the default impls of min and max in terms of le and select.
