@@ -495,31 +495,9 @@ macro_rules! impl_int {
             }
         }
 
-        impl Mul for $int {
-            type Output = Self;
-
-            fn mul(self, _rhs: Self) -> Self {
-                unimplemented!()
-            }
-        }
-
         impl MulAssign for $int {
             fn mul_assign(&mut self, rhs: Self) {
                 *self = *self * rhs;
-            }
-        }
-
-        impl Div for $int {
-            type Output = Self;
-
-            fn div(self, _rhs: Self) -> Self {
-                unimplemented!()
-            }
-        }
-
-        impl DivAssign for $int {
-            fn div_assign(&mut self, rhs: Self) {
-                *self = *self / rhs;
             }
         }
 
@@ -528,6 +506,55 @@ macro_rules! impl_int {
 
             fn neg(self) -> Self {
                 unsafe { $int($sub($set(0), self.0)) }
+            }
+        }
+    };
+}
+
+macro_rules! impl_int_mul {
+    ($int8:ident, $int16:ident, $int32:ident, $int64:ident, $mul64:ident) => {
+        impl Mul for $int8 {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                unsafe {
+                    let lhs_odd = _mm256_srli_epi16(self.0, 8);
+                    let rhs_odd = _mm256_srli_epi16(rhs.0, 8);
+                    let even = _mm256_mullo_epi16(self.0, rhs.0);
+                    let odd = _mm256_slli_epi16(_mm256_mullo_epi16(lhs_odd, rhs_odd), 8);
+                    let mask = _mm256_set1_epi32(0xFF00FF00u32 as i32);
+                    $int8(_mm256_blendv_epi8(even, odd, mask))
+                }
+            }
+        }
+
+        impl Mul for $int16 {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                unsafe { $int16(_mm256_mullo_epi16(self.0, rhs.0)) }
+            }
+        }
+
+        impl Mul for $int32 {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                unsafe { $int32(_mm256_mullo_epi32(self.0, rhs.0)) }
+            }
+        }
+
+        impl Mul for $int64 {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self {
+                unsafe {
+                    let low_high = _mm256_mullo_epi32(self.0, _mm256_slli_epi64(rhs.0, 32));
+                    let high_low = _mm256_mullo_epi32(rhs.0, _mm256_slli_epi64(self.0, 32));
+                    let low_low = $mul64(self.0, rhs.0);
+                    let high = _mm256_add_epi32(low_high, high_low);
+                    $int64(_mm256_add_epi32(low_low, high))
+                }
             }
         }
     };
@@ -555,6 +582,7 @@ impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
 impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
+impl_int_mul! { u8x32, u16x16, u32x8, u64x4, _mm256_mul_epu32 }
 
 // AVX2 lacks unsigned integer compares, but it does have unsigned integer min/max for 8, 16, and
 // 32 bits. The impl_ord_uint macro thus implements le in terms of min and cmpeq. However, 64-bit
@@ -584,6 +612,7 @@ impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
 impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
 impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
+impl_int_mul! { i8x32, i16x16, i32x8, i64x4, _mm256_mul_epi32 }
 
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
 // back to the default impls of min and max in terms of le and select.
