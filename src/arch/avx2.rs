@@ -324,12 +324,6 @@ macro_rules! int_type {
             }
         }
 
-        impl LanesOrd for $int {
-            fn lt(&self, other: &Self) -> Self::Output {
-                unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
-            }
-        }
-
         impl Index<usize> for $int {
             type Output = <Self as Simd>::Elem;
 
@@ -402,6 +396,68 @@ macro_rules! int_type {
         impl Select<$int> for $mask {
             fn select(self, if_true: $int, if_false: $int) -> $int {
                 unsafe { $int(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+            }
+        }
+    };
+}
+
+macro_rules! impl_ord_uint {
+    ($uint:ident, $mask:ident, $cmpeq:ident, $max:ident, $min:ident) => {
+        impl LanesOrd for $uint {
+            fn lt(&self, other: &Self) -> Self::Output {
+                !other.le(self)
+            }
+
+            fn le(&self, other: &Self) -> Self::Output {
+                unsafe { $mask($cmpeq(self.0, $min(self.0, other.0))) }
+            }
+
+            fn max(self, other: Self) -> Self {
+                unsafe { $uint($max(self.0, other.0)) }
+            }
+
+            fn min(self, other: Self) -> Self {
+                unsafe { $uint($min(self.0, other.0)) }
+            }
+        }
+    };
+}
+
+macro_rules! impl_ord_int {
+    ($int:ident, $mask:ident, $cmpgt:ident, $max:ident, $min:ident) => {
+        impl LanesOrd for $int {
+            fn lt(&self, other: &Self) -> Self::Output {
+                unsafe { $mask($cmpgt(other.0, self.0)) }
+            }
+
+            fn max(self, other: Self) -> Self {
+                unsafe { $int($max(self.0, other.0)) }
+            }
+
+            fn min(self, other: Self) -> Self {
+                unsafe { $int($min(self.0, other.0)) }
+            }
+        }
+    };
+}
+
+macro_rules! impl_ord_mask {
+    ($mask:ident) => {
+        impl LanesOrd for $mask {
+            fn lt(&self, other: &Self) -> Self::Output {
+                unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
+            }
+
+            fn le(&self, other: &Self) -> Self::Output {
+                unsafe { $mask(_mm256_or_si256(other.0, _mm256_cmpeq_epi8(self.0, other.0))) }
+            }
+
+            fn max(self, other: Self) -> Self {
+                unsafe { $mask(_mm256_or_si256(self.0, other.0)) }
+            }
+
+            fn min(self, other: Self) -> Self {
+                unsafe { $mask(_mm256_and_si256(self.0, other.0)) }
             }
         }
     };
@@ -492,24 +548,59 @@ int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { u32x8, u32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { u64x4, u64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_ord_uint! { u8x32, m8x32, _mm256_cmpeq_epi8, _mm256_max_epi8, _mm256_min_epi8 }
+impl_ord_uint! { u16x16, m16x16, _mm256_cmpeq_epi16, _mm256_max_epi16, _mm256_min_epi16 }
+impl_ord_uint! { u32x8, m32x8, _mm256_cmpeq_epi32, _mm256_max_epi32, _mm256_min_epi32 }
 impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
 
+// AVX2 lacks unsigned integer compares, but it does have unsigned integer min/max for 8, 16, and
+// 32 bits. The impl_ord_uint macro thus implements le in terms of min and cmpeq. However, 64-bit
+// unsigned integer min/max ops (_mm256_{min,max}_epu64) are only available on AVX512, so for u64x4
+// we have to use a biased signed comparison (and then fall back to the default impls of min/max in
+// terms of le and select).
+impl LanesOrd for u64x4 {
+    fn lt(&self, other: &Self) -> Self::Output {
+        unsafe {
+            let bias = _mm256_set1_epi64x(i64::MIN);
+            m64x4(_mm256_cmpgt_epi64(
+                _mm256_add_epi32(other.0, bias),
+                _mm256_add_epi32(self.0, bias),
+            ))
+        }
+    }
+}
+
 int_type! { i8x32, i8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { i16x16, i16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { i32x8, i32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { i64x4, i64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_ord_int! { i8x32, m8x32, _mm256_cmpgt_epi8, _mm256_max_epi8, _mm256_min_epi8 }
+impl_ord_int! { i16x16, m16x16, _mm256_cmpgt_epi16, _mm256_max_epi16, _mm256_min_epi16 }
+impl_ord_int! { i32x8, m32x8, _mm256_cmpgt_epi32, _mm256_max_epi32, _mm256_min_epi32 }
 impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
 
+// 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
+// back to the default impls of min and max in terms of le and select.
+impl LanesOrd for i64x4 {
+    fn lt(&self, other: &Self) -> Self::Output {
+        unsafe { m64x4(_mm256_cmpgt_epi64(other.0, self.0)) }
+    }
+}
+
 int_type! { m8x32, m8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { m16x16, m16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { m32x8, m32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { m64x4, m64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
+impl_ord_mask! { m8x32 }
+impl_ord_mask! { m16x16 }
+impl_ord_mask! { m32x8 }
+impl_ord_mask! { m64x4 }
 
 #[cfg(test)]
 mod tests {
