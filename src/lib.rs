@@ -62,7 +62,7 @@ where
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
     Self: Div<Output = Self> + DivAssign,
-    Self: Neg,
+    Self: Neg<Output = Self>,
 {
 }
 
@@ -71,7 +71,7 @@ where
     Self: Add<Output = Self> + AddAssign,
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
-    Self: Neg,
+    Self: Neg<Output = Self>,
 {
 }
 
