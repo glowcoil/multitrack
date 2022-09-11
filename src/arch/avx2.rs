@@ -552,9 +552,9 @@ impl_ord_uint! { u8x32, m8x32, _mm256_cmpeq_epi8, _mm256_max_epi8, _mm256_min_ep
 impl_ord_uint! { u16x16, m16x16, _mm256_cmpeq_epi16, _mm256_max_epi16, _mm256_min_epi16 }
 impl_ord_uint! { u32x8, m32x8, _mm256_cmpeq_epi32, _mm256_max_epi32, _mm256_min_epi32 }
 impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
+impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
+impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
 
 // AVX2 lacks unsigned integer compares, but it does have unsigned integer min/max for 8, 16, and
 // 32 bits. The impl_ord_uint macro thus implements le in terms of min and cmpeq. However, 64-bit
@@ -581,9 +581,9 @@ impl_ord_int! { i8x32, m8x32, _mm256_cmpgt_epi8, _mm256_max_epi8, _mm256_min_epi
 impl_ord_int! { i16x16, m16x16, _mm256_cmpgt_epi16, _mm256_max_epi16, _mm256_min_epi16 }
 impl_ord_int! { i32x8, m32x8, _mm256_cmpgt_epi32, _mm256_max_epi32, _mm256_min_epi32 }
 impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi8, _mm256_sub_epi8 }
+impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
+impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
+impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
 
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
 // back to the default impls of min and max in terms of le and select.
