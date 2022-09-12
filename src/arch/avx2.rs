@@ -630,17 +630,3 @@ impl_ord_mask! { m8x32 }
 impl_ord_mask! { m16x16 }
 impl_ord_mask! { m32x8 }
 impl_ord_mask! { m64x4 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let x = f32x8::new(3.0);
-        let y = x
-            .eq(&f32x8::new(3.0))
-            .select(f32x8::new(0.0), f32x8::new(1.0));
-        assert_eq!(y[0], 0.0);
-    }
-}

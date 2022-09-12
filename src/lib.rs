@@ -130,43 +130,84 @@ pub trait Select<V> {
 mod tests {
     use super::*;
 
-    use arch::scalar::Scalar;
+    use arch::{avx2::Avx2, scalar::Scalar};
 
     #[test]
-    fn basic() {
-        fn f<A: Arch>() {
-            let mut x = A::f32::new(0.0);
-            x[0] = 1.0;
+    fn integers() {
+        #[inline(never)]
+        fn test_type_inner<S>(
+            min: S::Elem,
+            step: S::Elem,
+            binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem)],
+            unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem)],
+        ) where
+            S: Simd + Int + Bitwise,
+            S::Elem: AddAssign + Copy + Debug + Eq,
+        {
+            let mut values = [min; 64];
+            let mut counter = min;
+            for value in values.iter_mut() {
+                *value = counter;
+                counter += step;
+            }
 
-            let y = A::f32::new(2.0);
+            for x in &values {
+                for y in values.chunks(S::LANES) {
+                    for (vector, scalar) in binary_ops {
+                        let res = vector(S::new(*x), S::from_slice(y));
+                        for (y, out) in y.iter().zip(res.as_slice().iter()) {
+                            let scalar = scalar(*x, *y);
+                            assert_eq!(scalar, *out);
+                        }
+                    }
+                }
+            }
 
-            let z = x.lt(&y).select(x + y, x * y);
-
-            assert_eq!(z[0], 3.0);
+            for x in values.chunks(S::LANES) {
+                for (vector, scalar) in unary_ops {
+                    let res = vector(S::from_slice(x));
+                    for (x, out) in x.iter().zip(res.as_slice().iter()) {
+                        let scalar = scalar(*x);
+                        assert_eq!(scalar, *out);
+                    }
+                }
+            }
         }
 
-        f::<Scalar>();
-    }
-
-    #[test]
-    fn align_slice() {
-        fn f<A: Arch>() {
-            let mut a = [0.0; 100];
-
-            let (prefix, middle, suffix) = A::f32::align_mut_slice(&mut a);
-            for x in prefix {
-                *x += 1.0;
-            }
-            for x in middle {
-                *x += A::f32::new(1.0);
-            }
-            for x in suffix {
-                *x += 1.0;
-            }
-
-            assert_eq!(&a, &[1.0; 100]);
+        macro_rules! test_type {
+            ($type:ident) => {
+                test_type_inner::<A::$type>(
+                    $type::MIN,
+                    (($type::MAX as i128 - $type::MIN as i128) / 64) as $type,
+                    &[
+                        (A::$type::add, $type::wrapping_add),
+                        (A::$type::sub, $type::wrapping_sub),
+                        (A::$type::mul, $type::wrapping_mul),
+                        (A::$type::bitand, $type::bitand),
+                        (A::$type::bitor, $type::bitor),
+                        (A::$type::bitxor, $type::bitxor),
+                    ],
+                    &[
+                        (A::$type::neg, $type::wrapping_neg),
+                        (A::$type::not, $type::not),
+                    ],
+                );
+            };
         }
 
-        f::<Scalar>();
+        fn test_arch<A: Arch>() {
+            test_type!(i8);
+            test_type!(i16);
+            test_type!(i32);
+            test_type!(i64);
+
+            test_type!(u8);
+            test_type!(u16);
+            test_type!(u32);
+            test_type!(u64);
+        }
+
+        test_arch::<Scalar>();
+        test_arch::<Avx2>();
     }
 }
