@@ -242,6 +242,28 @@ mod tests {
         }};
     }
 
+    macro_rules! test_mask {
+        ($type:ident) => {{
+            let values = [false.into(), true.into()]
+                .into_iter()
+                .cycle()
+                .take(64)
+                .collect::<Vec<$type>>();
+
+            test_ops::<A::$type>(
+                stringify!($type),
+                &values,
+                $type::eq,
+                &[
+                    (A::$type::bitand, $type::bitand, "bitand"),
+                    (A::$type::bitor, $type::bitor, "bitor"),
+                    (A::$type::bitxor, $type::bitxor, "bitxor"),
+                ],
+                &[(A::$type::not, $type::not, "not")],
+            );
+        }};
+    }
+
     fn test_arch<A: Arch>() {
         test_float!(f32);
         test_float!(f64);
@@ -255,6 +277,11 @@ mod tests {
         test_int!(i16);
         test_int!(i32);
         test_int!(i64);
+
+        test_mask!(m8);
+        test_mask!(m16);
+        test_mask!(m32);
+        test_mask!(m64);
     }
 
     #[test]
