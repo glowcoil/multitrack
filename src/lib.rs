@@ -132,82 +132,100 @@ mod tests {
 
     use arch::{avx2::Avx2, scalar::Scalar};
 
+    fn test_ops<S>(
+        type_: &str,
+        values: &[S::Elem],
+        binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem, &str)],
+        unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem, &str)],
+    ) where
+        S: Simd,
+        S::Elem: Copy + Debug + Eq,
+    {
+        for x in values {
+            for y in values.chunks(S::LANES) {
+                for (vector, scalar, op) in binary_ops {
+                    let res = vector(S::new(*x), S::from_slice(y));
+                    for (y, out) in y.iter().zip(res.as_slice().iter()) {
+                        let scalar = scalar(*x, *y);
+                        assert!(
+                            scalar == *out,
+                            "expected {}::{}({:?}, {:?}) == {:?}, got {:?}",
+                            type_,
+                            op,
+                            *x,
+                            *y,
+                            scalar,
+                            *out
+                        );
+                    }
+                }
+            }
+        }
+
+        for x in values.chunks(S::LANES) {
+            for (vector, scalar, op) in unary_ops {
+                let res = vector(S::from_slice(x));
+                for (x, out) in x.iter().zip(res.as_slice().iter()) {
+                    let scalar = scalar(*x);
+                    assert!(
+                        scalar == *out,
+                        "expected {}::{}({:?}) == {:?}, got {:?}",
+                        type_,
+                        op,
+                        *x,
+                        scalar,
+                        *out
+                    );
+                }
+            }
+        }
+    }
+
+    macro_rules! test_int {
+        ($type:ident) => {{
+            let values = ($type::MIN..=$type::MAX)
+                .step_by(1 << ($type::BITS as usize - 6))
+                .take(64)
+                .collect::<Vec<$type>>();
+
+            test_ops::<A::$type>(
+                stringify!($type),
+                &values,
+                &[
+                    (A::$type::add, $type::wrapping_add, "add"),
+                    (A::$type::sub, $type::wrapping_sub, "sub"),
+                    (A::$type::mul, $type::wrapping_mul, "mul"),
+                    (A::$type::bitand, $type::bitand, "bitand"),
+                    (A::$type::bitor, $type::bitor, "bitor"),
+                    (A::$type::bitxor, $type::bitxor, "bitxor"),
+                ],
+                &[
+                    (A::$type::neg, $type::wrapping_neg, "neg"),
+                    (A::$type::not, $type::not, "not"),
+                ],
+            );
+        }};
+    }
+
+    fn test_arch<A: Arch>() {
+        test_int!(i8);
+        test_int!(i16);
+        test_int!(i32);
+        test_int!(i64);
+
+        test_int!(u8);
+        test_int!(u16);
+        test_int!(u32);
+        test_int!(u64);
+    }
+
     #[test]
-    fn integers() {
-        #[inline(never)]
-        fn test_type_inner<S>(
-            min: S::Elem,
-            step: S::Elem,
-            binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem)],
-            unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem)],
-        ) where
-            S: Simd + Int + Bitwise,
-            S::Elem: AddAssign + Copy + Debug + Eq,
-        {
-            let mut values = [min; 64];
-            let mut counter = min;
-            for value in values.iter_mut() {
-                *value = counter;
-                counter += step;
-            }
-
-            for x in &values {
-                for y in values.chunks(S::LANES) {
-                    for (vector, scalar) in binary_ops {
-                        let res = vector(S::new(*x), S::from_slice(y));
-                        for (y, out) in y.iter().zip(res.as_slice().iter()) {
-                            let scalar = scalar(*x, *y);
-                            assert_eq!(scalar, *out);
-                        }
-                    }
-                }
-            }
-
-            for x in values.chunks(S::LANES) {
-                for (vector, scalar) in unary_ops {
-                    let res = vector(S::from_slice(x));
-                    for (x, out) in x.iter().zip(res.as_slice().iter()) {
-                        let scalar = scalar(*x);
-                        assert_eq!(scalar, *out);
-                    }
-                }
-            }
-        }
-
-        macro_rules! test_type {
-            ($type:ident) => {
-                test_type_inner::<A::$type>(
-                    $type::MIN,
-                    (($type::MAX as i128 - $type::MIN as i128) / 64) as $type,
-                    &[
-                        (A::$type::add, $type::wrapping_add),
-                        (A::$type::sub, $type::wrapping_sub),
-                        (A::$type::mul, $type::wrapping_mul),
-                        (A::$type::bitand, $type::bitand),
-                        (A::$type::bitor, $type::bitor),
-                        (A::$type::bitxor, $type::bitxor),
-                    ],
-                    &[
-                        (A::$type::neg, $type::wrapping_neg),
-                        (A::$type::not, $type::not),
-                    ],
-                );
-            };
-        }
-
-        fn test_arch<A: Arch>() {
-            test_type!(i8);
-            test_type!(i16);
-            test_type!(i32);
-            test_type!(i64);
-
-            test_type!(u8);
-            test_type!(u16);
-            test_type!(u32);
-            test_type!(u64);
-        }
-
+    fn scalar() {
         test_arch::<Scalar>();
+    }
+
+    #[test]
+    fn avx2() {
         test_arch::<Avx2>();
     }
 }
