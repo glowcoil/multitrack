@@ -135,11 +135,12 @@ mod tests {
     fn test_ops<S>(
         type_: &str,
         values: &[S::Elem],
+        eq: fn(&S::Elem, &S::Elem) -> bool,
         binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem, &str)],
         unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem, &str)],
     ) where
         S: Simd,
-        S::Elem: Copy + Debug + Eq,
+        S::Elem: Copy + Debug + PartialEq,
     {
         for x in values {
             for y in values.chunks(S::LANES) {
@@ -148,7 +149,7 @@ mod tests {
                     for (y, out) in y.iter().zip(res.as_slice().iter()) {
                         let scalar = scalar(*x, *y);
                         assert!(
-                            scalar == *out,
+                            eq(&scalar, out),
                             "expected {}::{}({:?}, {:?}) == {:?}, got {:?}",
                             type_,
                             op,
@@ -168,7 +169,7 @@ mod tests {
                 for (x, out) in x.iter().zip(res.as_slice().iter()) {
                     let scalar = scalar(*x);
                     assert!(
-                        scalar == *out,
+                        eq(&scalar, out),
                         "expected {}::{}({:?}) == {:?}, got {:?}",
                         type_,
                         op,
@@ -181,6 +182,39 @@ mod tests {
         }
     }
 
+    macro_rules! test_float {
+        ($type:ident) => {{
+            let values = [
+                -1.0,
+                0.0,
+                1.0,
+                $type::EPSILON,
+                $type::MIN,
+                $type::MAX,
+                $type::NEG_INFINITY,
+                $type::INFINITY,
+                $type::NAN,
+            ]
+            .into_iter()
+            .cycle()
+            .take(64)
+            .collect::<Vec<$type>>();
+
+            test_ops::<A::$type>(
+                stringify!($type),
+                &values,
+                |x, y| x.to_bits() == y.to_bits(),
+                &[
+                    (A::$type::add, $type::add, "add"),
+                    (A::$type::sub, $type::sub, "sub"),
+                    (A::$type::mul, $type::mul, "mul"),
+                    (A::$type::div, $type::div, "div"),
+                ],
+                &[(A::$type::neg, $type::neg, "neg")],
+            );
+        }};
+    }
+
     macro_rules! test_int {
         ($type:ident) => {{
             let values = ($type::MIN..=$type::MAX)
@@ -191,6 +225,7 @@ mod tests {
             test_ops::<A::$type>(
                 stringify!($type),
                 &values,
+                $type::eq,
                 &[
                     (A::$type::add, $type::wrapping_add, "add"),
                     (A::$type::sub, $type::wrapping_sub, "sub"),
@@ -208,15 +243,18 @@ mod tests {
     }
 
     fn test_arch<A: Arch>() {
-        test_int!(i8);
-        test_int!(i16);
-        test_int!(i32);
-        test_int!(i64);
+        test_float!(f32);
+        test_float!(f64);
 
         test_int!(u8);
         test_int!(u16);
         test_int!(u32);
         test_int!(u64);
+
+        test_int!(i8);
+        test_int!(i16);
+        test_int!(i32);
+        test_int!(i64);
     }
 
     #[test]
