@@ -320,10 +320,6 @@ macro_rules! int_type {
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmp(self.0, other.0)) }
             }
-
-            fn ne(&self, other: &Self) -> Self::Output {
-                unsafe { $mask(_mm256_xor_si256(self.0, other.0)) }
-            }
         }
 
         impl Index<usize> for $int {
