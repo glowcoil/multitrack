@@ -186,8 +186,10 @@ mod tests {
         ($type:ident) => {{
             let values = [
                 -1.0,
+                -0.0,
                 0.0,
                 1.0,
+                -$type::EPSILON,
                 $type::EPSILON,
                 $type::MIN,
                 $type::MAX,
