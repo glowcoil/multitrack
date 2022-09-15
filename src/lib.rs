@@ -16,31 +16,32 @@ where
     Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
     Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
 {
-    type f32: Simd<Elem = f32> + Float;
-    type f64: Simd<Elem = f64> + Float;
+    type f32: Simd<Elem = f32, Mask = Self::m32> + Float;
+    type f64: Simd<Elem = f64, Mask = Self::m64> + Float;
 
-    type u8: Simd<Elem = u8> + Int + Bitwise;
-    type u16: Simd<Elem = u16> + Int + Bitwise;
-    type u32: Simd<Elem = u32> + Int + Bitwise;
-    type u64: Simd<Elem = u64> + Int + Bitwise;
+    type u8: Simd<Elem = u8, Mask = Self::m8> + Int + Bitwise;
+    type u16: Simd<Elem = u16, Mask = Self::m16> + Int + Bitwise;
+    type u32: Simd<Elem = u32, Mask = Self::m32> + Int + Bitwise;
+    type u64: Simd<Elem = u64, Mask = Self::m64> + Int + Bitwise;
 
-    type i8: Simd<Elem = i8> + Int + Bitwise;
-    type i16: Simd<Elem = i16> + Int + Bitwise;
-    type i32: Simd<Elem = i32> + Int + Bitwise;
-    type i64: Simd<Elem = i64> + Int + Bitwise;
+    type i8: Simd<Elem = i8, Mask = Self::m8> + Int + Bitwise;
+    type i16: Simd<Elem = i16, Mask = Self::m16> + Int + Bitwise;
+    type i32: Simd<Elem = i32, Mask = Self::m32> + Int + Bitwise;
+    type i64: Simd<Elem = i64, Mask = Self::m64> + Int + Bitwise;
 
-    type m8: Simd<Elem = m8> + Bitwise;
-    type m16: Simd<Elem = m16> + Bitwise;
-    type m32: Simd<Elem = m32> + Bitwise;
-    type m64: Simd<Elem = m64> + Bitwise;
+    type m8: Simd<Elem = m8, Mask = Self::m8> + Bitwise;
+    type m16: Simd<Elem = m16, Mask = Self::m16> + Bitwise;
+    type m32: Simd<Elem = m32, Mask = Self::m32> + Bitwise;
+    type m64: Simd<Elem = m64, Mask = Self::m64> + Bitwise;
 }
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
 where
-    Self: LanesEq + LanesOrd,
+    Self: LanesEq<Output = Self::Mask> + LanesOrd<Output = Self::Mask>,
     Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
 {
     type Elem;
+    type Mask: Select<Self>;
 
     const LANES: usize;
 

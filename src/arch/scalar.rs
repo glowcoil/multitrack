@@ -40,6 +40,7 @@ macro_rules! scalar_type {
 
         impl Simd for $scalar {
             type Elem = $inner;
+            type Mask = $mask;
 
             const LANES: usize = 1;
 
@@ -130,6 +131,7 @@ macro_rules! wrapping_scalar_type {
 
         impl Simd for $scalar {
             type Elem = $inner;
+            type Mask = $mask;
 
             const LANES: usize = 1;
 

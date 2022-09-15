@@ -49,6 +49,7 @@ macro_rules! float_type {
 
         impl Simd for $float {
             type Elem = $elem;
+            type Mask = $mask;
 
             const LANES: usize = $lanes;
 
@@ -258,6 +259,7 @@ macro_rules! int_type {
 
         impl Simd for $int {
             type Elem = $elem;
+            type Mask = $mask;
 
             const LANES: usize = $lanes;
 
