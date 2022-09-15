@@ -41,7 +41,7 @@ macro_rules! float_type {
     (
         $float:ident, $inner:ident, $elem:ident, $lanes:literal, $mask:ident,
         $set:ident, $load:ident, $store:ident, $cast_to_int:ident, $cast_from_int:ident, $blend:ident,
-        $cmp:ident, $min:ident, $max:ident, $add:ident, $sub:ident, $mul:ident, $div:ident, $xor:ident,
+        $cmp:ident, $max:ident, $min:ident, $add:ident, $sub:ident, $mul:ident, $div:ident, $xor:ident,
     ) => {
         #[derive(Copy, Clone)]
         #[repr(transparent)]
@@ -151,11 +151,11 @@ macro_rules! float_type {
             }
 
             fn max(self, other: Self) -> Self {
-                unsafe { $float($min(self.0, other.0)) }
+                unsafe { $float($max(self.0, other.0)) }
             }
 
             fn min(self, other: Self) -> Self {
-                unsafe { $float($max(self.0, other.0)) }
+                unsafe { $float($min(self.0, other.0)) }
             }
         }
 
@@ -563,21 +563,21 @@ macro_rules! impl_int_mul {
 float_type! {
     f32x8, __m256, f32, 8, m32x8,
     _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_castps_si256, _mm256_castsi256_ps, _mm256_blendv_ps,
-    _mm256_cmp_ps, _mm256_min_ps, _mm256_max_ps, _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps, _mm256_xor_ps,
+    _mm256_cmp_ps, _mm256_max_ps, _mm256_min_ps, _mm256_add_ps, _mm256_sub_ps, _mm256_mul_ps, _mm256_div_ps, _mm256_xor_ps,
 }
 float_type! {
     f64x4, __m256d, f64, 4, m64x4,
     _mm256_set1_pd, _mm256_loadu_pd, _mm256_storeu_pd, _mm256_castpd_si256, _mm256_castsi256_pd, _mm256_blendv_pd,
-    _mm256_cmp_pd, _mm256_min_pd, _mm256_max_pd, _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd, _mm256_xor_pd,
+    _mm256_cmp_pd, _mm256_max_pd, _mm256_min_pd, _mm256_add_pd, _mm256_sub_pd, _mm256_mul_pd, _mm256_div_pd, _mm256_xor_pd,
 }
 
 int_type! { u8x32, u8, 32, m8x32, _mm256_set1_epi8, _mm256_cmpeq_epi8 }
 int_type! { u16x16, u16, 16, m16x16, _mm256_set1_epi16, _mm256_cmpeq_epi16 }
 int_type! { u32x8, u32, 8, m32x8, _mm256_set1_epi32, _mm256_cmpeq_epi32 }
 int_type! { u64x4, u64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
-impl_ord_uint! { u8x32, m8x32, _mm256_cmpeq_epi8, _mm256_max_epi8, _mm256_min_epi8 }
-impl_ord_uint! { u16x16, m16x16, _mm256_cmpeq_epi16, _mm256_max_epi16, _mm256_min_epi16 }
-impl_ord_uint! { u32x8, m32x8, _mm256_cmpeq_epi32, _mm256_max_epi32, _mm256_min_epi32 }
+impl_ord_uint! { u8x32, m8x32, _mm256_cmpeq_epi8, _mm256_max_epu8, _mm256_min_epu8 }
+impl_ord_uint! { u16x16, m16x16, _mm256_cmpeq_epi16, _mm256_max_epu16, _mm256_min_epu16 }
+impl_ord_uint! { u32x8, m32x8, _mm256_cmpeq_epi32, _mm256_max_epu32, _mm256_min_epu32 }
 impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
 impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
 impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
