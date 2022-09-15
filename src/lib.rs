@@ -99,7 +99,7 @@ pub trait LanesOrd<Rhs = Self>: LanesEq<Rhs> {
     fn lt(&self, other: &Self) -> Self::Output;
 
     fn le(&self, other: &Self) -> Self::Output {
-        !self.gt(other)
+        self.lt(other) | self.eq(other)
     }
 
     fn gt(&self, other: &Self) -> Self::Output {
