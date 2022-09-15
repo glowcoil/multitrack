@@ -116,7 +116,7 @@ macro_rules! float_type {
 
             fn ne(&self, other: &Self) -> Self::Output {
                 unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_NEQ_OQ);
+                    let res = $cmp(self.0, other.0, _CMP_NEQ_UQ);
                     $mask($cast_to_int(res))
                 }
             }
