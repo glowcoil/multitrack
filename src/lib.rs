@@ -202,6 +202,22 @@ mod tests {
             .take(64)
             .collect::<Vec<$type>>();
 
+            fn max(a: $type, b: $type) -> $type {
+                if a > b {
+                    a
+                } else {
+                    b
+                }
+            }
+
+            fn min(a: $type, b: $type) -> $type {
+                if a < b {
+                    a
+                } else {
+                    b
+                }
+            }
+
             test_ops::<A::$type>(
                 stringify!($type),
                 &values,
@@ -211,6 +227,8 @@ mod tests {
                     (A::$type::sub, $type::sub, "sub"),
                     (A::$type::mul, $type::mul, "mul"),
                     (A::$type::div, $type::div, "div"),
+                    (A::$type::max, max, "max"),
+                    (A::$type::min, min, "min"),
                 ],
                 &[(A::$type::neg, $type::neg, "neg")],
             );
@@ -235,6 +253,8 @@ mod tests {
                     (A::$type::bitand, $type::bitand, "bitand"),
                     (A::$type::bitor, $type::bitor, "bitor"),
                     (A::$type::bitxor, $type::bitxor, "bitxor"),
+                    (A::$type::max, $type::max, "max"),
+                    (A::$type::min, $type::min, "min"),
                 ],
                 &[
                     (A::$type::neg, $type::wrapping_neg, "neg"),
@@ -260,6 +280,8 @@ mod tests {
                     (A::$type::bitand, $type::bitand, "bitand"),
                     (A::$type::bitor, $type::bitor, "bitor"),
                     (A::$type::bitxor, $type::bitxor, "bitxor"),
+                    (A::$type::max, $type::max, "max"),
+                    (A::$type::min, $type::min, "min"),
                 ],
                 &[(A::$type::not, $type::not, "not")],
             );
