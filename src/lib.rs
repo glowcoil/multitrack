@@ -137,12 +137,37 @@ mod tests {
         type_: &str,
         values: &[S::Elem],
         eq: fn(&S::Elem, &S::Elem) -> bool,
-        binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem, &str)],
         unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem, &str)],
+        binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem, &str)],
+        cmp_ops: &[(
+            fn(&S, &S) -> S::Mask,
+            fn(&S::Elem, &S::Elem) -> <S::Mask as Simd>::Elem,
+            &str,
+        )],
     ) where
         S: Simd,
-        S::Elem: Copy + Debug + PartialEq,
+        S::Elem: Copy + Debug,
+        S::Mask: Simd,
+        <S::Mask as Simd>::Elem: Debug + PartialEq,
     {
+        for x in values.chunks(S::LANES) {
+            for (vector, scalar, op) in unary_ops {
+                let res = vector(S::from_slice(x));
+                for (x, out) in x.iter().zip(res.as_slice().iter()) {
+                    let scalar = scalar(*x);
+                    assert!(
+                        eq(&scalar, out),
+                        "expected {}::{}({:?}) == {:?}, got {:?}",
+                        type_,
+                        op,
+                        *x,
+                        scalar,
+                        *out
+                    );
+                }
+            }
+        }
+
         for x in values {
             for y in values.chunks(S::LANES) {
                 for (vector, scalar, op) in binary_ops {
@@ -161,23 +186,22 @@ mod tests {
                         );
                     }
                 }
-            }
-        }
 
-        for x in values.chunks(S::LANES) {
-            for (vector, scalar, op) in unary_ops {
-                let res = vector(S::from_slice(x));
-                for (x, out) in x.iter().zip(res.as_slice().iter()) {
-                    let scalar = scalar(*x);
-                    assert!(
-                        eq(&scalar, out),
-                        "expected {}::{}({:?}) == {:?}, got {:?}",
-                        type_,
-                        op,
-                        *x,
-                        scalar,
-                        *out
-                    );
+                for (vector, scalar, op) in cmp_ops {
+                    let res = vector(&S::new(*x), &S::from_slice(y));
+                    for (y, out) in y.iter().zip(res.as_slice().iter()) {
+                        let scalar = scalar(x, y);
+                        assert!(
+                            &scalar == out,
+                            "expected {}::{}({:?}, {:?}) == {:?}, got {:?}",
+                            type_,
+                            op,
+                            *x,
+                            *y,
+                            scalar,
+                            *out
+                        );
+                    }
                 }
             }
         }
@@ -223,6 +247,7 @@ mod tests {
                 stringify!($type),
                 &values,
                 |x, y| x.to_bits() == y.to_bits(),
+                &[(A::$type::neg, $type::neg, "neg")],
                 &[
                     (A::$type::add, $type::add, "add"),
                     (A::$type::sub, $type::sub, "sub"),
@@ -231,7 +256,14 @@ mod tests {
                     (A::$type::max, max, "max"),
                     (A::$type::min, min, "min"),
                 ],
-                &[(A::$type::neg, $type::neg, "neg")],
+                &[
+                    (A::$type::eq, |x, y| (x == y).into(), "eq"),
+                    (A::$type::ne, |x, y| (x != y).into(), "ne"),
+                    (A::$type::lt, |x, y| (x < y).into(), "lt"),
+                    (A::$type::le, |x, y| (x <= y).into(), "le"),
+                    (A::$type::gt, |x, y| (x > y).into(), "gt"),
+                    (A::$type::ge, |x, y| (x >= y).into(), "ge"),
+                ],
             );
         }};
     }
@@ -248,6 +280,10 @@ mod tests {
                 &values,
                 $type::eq,
                 &[
+                    (A::$type::neg, $type::wrapping_neg, "neg"),
+                    (A::$type::not, $type::not, "not"),
+                ],
+                &[
                     (A::$type::add, $type::wrapping_add, "add"),
                     (A::$type::sub, $type::wrapping_sub, "sub"),
                     (A::$type::mul, $type::wrapping_mul, "mul"),
@@ -258,8 +294,12 @@ mod tests {
                     (A::$type::min, $type::min, "min"),
                 ],
                 &[
-                    (A::$type::neg, $type::wrapping_neg, "neg"),
-                    (A::$type::not, $type::not, "not"),
+                    (A::$type::eq, |x, y| (x == y).into(), "eq"),
+                    (A::$type::ne, |x, y| (x != y).into(), "ne"),
+                    (A::$type::lt, |x, y| (x < y).into(), "lt"),
+                    (A::$type::le, |x, y| (x <= y).into(), "le"),
+                    (A::$type::gt, |x, y| (x > y).into(), "gt"),
+                    (A::$type::ge, |x, y| (x >= y).into(), "ge"),
                 ],
             );
         }};
@@ -277,6 +317,7 @@ mod tests {
                 stringify!($type),
                 &values,
                 $type::eq,
+                &[(A::$type::not, $type::not, "not")],
                 &[
                     (A::$type::bitand, $type::bitand, "bitand"),
                     (A::$type::bitor, $type::bitor, "bitor"),
@@ -284,7 +325,14 @@ mod tests {
                     (A::$type::max, $type::max, "max"),
                     (A::$type::min, $type::min, "min"),
                 ],
-                &[(A::$type::not, $type::not, "not")],
+                &[
+                    (A::$type::eq, |x, y| (x == y).into(), "eq"),
+                    (A::$type::ne, |x, y| (x != y).into(), "ne"),
+                    (A::$type::lt, |x, y| (x < y).into(), "lt"),
+                    (A::$type::le, |x, y| (x <= y).into(), "le"),
+                    (A::$type::gt, |x, y| (x > y).into(), "gt"),
+                    (A::$type::ge, |x, y| (x >= y).into(), "ge"),
+                ],
             );
         }};
     }
