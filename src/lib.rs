@@ -131,7 +131,7 @@ pub trait Select<V> {
 mod tests {
     use super::*;
 
-    use arch::{avx2::Avx2, scalar::Scalar};
+    use arch::{avx2::Avx2, scalar::Scalar, sse4_2::Sse4_2};
 
     fn test_ops<S>(
         type_: &str,
@@ -383,6 +383,11 @@ mod tests {
     #[test]
     fn scalar() {
         test_arch::<Scalar>();
+    }
+
+    #[test]
+    fn sse4_2() {
+        test_arch::<Sse4_2>();
     }
 
     #[test]
