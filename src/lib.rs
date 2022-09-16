@@ -148,8 +148,14 @@ mod tests {
         S: Simd,
         S::Elem: Copy + Debug,
         S::Mask: Simd,
-        <S::Mask as Simd>::Elem: Debug + PartialEq,
+        <S::Mask as Simd>::Elem: From<bool> + Copy + Debug + PartialEq,
     {
+        let mask_values = [false.into(), true.into(), false.into()]
+            .into_iter()
+            .cycle()
+            .take(S::LANES * 2)
+            .collect::<Vec<<S::Mask as Simd>::Elem>>();
+
         for x in values.chunks(S::LANES) {
             for (vector, scalar, op) in unary_ops {
                 let res = vector(S::from_slice(x));
@@ -196,6 +202,23 @@ mod tests {
                             "expected {}::{}({:?}, {:?}) == {:?}, got {:?}",
                             type_,
                             op,
+                            *x,
+                            *y,
+                            scalar,
+                            *out
+                        );
+                    }
+                }
+
+                for m in mask_values.chunks(S::LANES) {
+                    let res = S::Mask::from_slice(m).select(S::new(*x), S::from_slice(y));
+                    for ((m, y), out) in m.iter().zip(y.iter()).zip(res.as_slice().iter()) {
+                        let scalar = if *m == true.into() { *x } else { *y };
+                        assert!(
+                            eq(&scalar, out),
+                            "expected {}::Mask::select({:?}, {:?}, {:?}) == {:?}, got {:?}",
+                            type_,
+                            *m,
                             *x,
                             *y,
                             scalar,
