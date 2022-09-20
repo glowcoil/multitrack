@@ -294,7 +294,7 @@ mod tests {
     macro_rules! test_int {
         ($type:ident) => {{
             let values = ($type::MIN..=$type::MAX)
-                .step_by(1 << ($type::BITS as usize - 6))
+                .step_by((1 << ($type::BITS as usize - 7)) + 1)
                 .take(64)
                 .collect::<Vec<$type>>();
 
