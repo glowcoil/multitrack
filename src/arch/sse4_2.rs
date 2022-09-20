@@ -530,10 +530,10 @@ macro_rules! impl_int_mul {
 
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
-                    let low_high = _mm_mullo_epi32(self.0, _mm_slli_epi64(rhs.0, 32));
-                    let high_low = _mm_mullo_epi32(rhs.0, _mm_slli_epi64(self.0, 32));
+                    let low_high = _mm_mul_epu32(self.0, _mm_srli_epi64(rhs.0, 32));
+                    let high_low = _mm_mul_epu32(rhs.0, _mm_srli_epi64(self.0, 32));
                     let low_low = _mm_mul_epu32(self.0, rhs.0);
-                    let high = _mm_add_epi32(low_high, high_low);
+                    let high = _mm_slli_epi64(_mm_add_epi32(low_high, high_low), 32);
                     $int64(_mm_add_epi32(low_low, high))
                 }
             }
