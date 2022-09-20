@@ -503,8 +503,8 @@ macro_rules! impl_int_mul {
                     let rhs_odd = _mm_srli_epi16(rhs.0, 8);
                     let even = _mm_mullo_epi16(self.0, rhs.0);
                     let odd = _mm_slli_epi16(_mm_mullo_epi16(lhs_odd, rhs_odd), 8);
-                    let mask = _mm_set1_epi32(0xFF00FF00u32 as i32);
-                    $int8(_mm_blendv_epi8(even, odd, mask))
+                    let mask = _mm_set1_epi16(0x00FF);
+                    $int8(_mm_blendv_epi8(odd, even, mask))
                 }
             }
         }
