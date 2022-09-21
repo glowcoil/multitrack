@@ -13,7 +13,7 @@ use std::arch::x86::*;
 use std::arch::x86_64::*;
 
 use crate::mask::*;
-use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
+use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 pub struct Avx2;
 

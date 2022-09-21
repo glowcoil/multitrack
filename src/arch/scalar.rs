@@ -8,7 +8,7 @@ use core::ops::{Index, IndexMut};
 use core::slice;
 
 use crate::mask::*;
-use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
+use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 pub struct Scalar;
 

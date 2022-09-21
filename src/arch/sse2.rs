@@ -14,7 +14,7 @@ use std::arch::x86_64::*;
 
 use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
 use crate::mask::*;
-use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
+use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 pub struct Sse2;
 
