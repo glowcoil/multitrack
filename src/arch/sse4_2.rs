@@ -16,9 +16,9 @@ use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
 use crate::mask::*;
 use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
-pub struct Sse4_2;
+pub struct Sse4_2Impl;
 
-impl Arch for Sse4_2 {
+impl Arch for Sse4_2Impl {
     type f32 = f32x4;
     type f64 = f64x2;
 

@@ -1,13 +1,14 @@
+pub mod arch;
 pub mod mask;
 pub mod simd;
 
-mod arch;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use core::fmt::Debug;
+    use core::ops::{Add, Div, Mul, Neg, Sub};
+    use core::ops::{BitAnd, BitOr, BitXor, Not};
 
-    use arch::{avx2::Avx2, scalar::Scalar, sse2::Sse2, sse4_2::Sse4_2};
+    use crate::{arch::*, mask::*, simd::*};
 
     fn test_ops<S>(
         type_: &str,
@@ -236,43 +237,49 @@ mod tests {
         }};
     }
 
-    fn test_arch<A: Arch>() {
-        test_float!(f32);
-        test_float!(f64);
+    struct TestArch;
 
-        test_int!(u8);
-        test_int!(u16);
-        test_int!(u32);
-        test_int!(u64);
+    impl Task for TestArch {
+        type Result = ();
 
-        test_int!(i8);
-        test_int!(i16);
-        test_int!(i32);
-        test_int!(i64);
+        fn run<A: Arch>(self) {
+            test_float!(f32);
+            test_float!(f64);
 
-        test_mask!(m8);
-        test_mask!(m16);
-        test_mask!(m32);
-        test_mask!(m64);
+            test_int!(u8);
+            test_int!(u16);
+            test_int!(u32);
+            test_int!(u64);
+
+            test_int!(i8);
+            test_int!(i16);
+            test_int!(i32);
+            test_int!(i64);
+
+            test_mask!(m8);
+            test_mask!(m16);
+            test_mask!(m32);
+            test_mask!(m64);
+        }
     }
 
     #[test]
     fn scalar() {
-        test_arch::<Scalar>();
+        Scalar::run(TestArch);
     }
 
     #[test]
     fn sse2() {
-        test_arch::<Sse2>();
+        Sse2::run(TestArch);
     }
 
     #[test]
     fn sse4_2() {
-        test_arch::<Sse4_2>();
+        Sse4_2::try_run(TestArch);
     }
 
     #[test]
     fn avx2() {
-        test_arch::<Avx2>();
+        Avx2::try_run(TestArch);
     }
 }

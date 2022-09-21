@@ -10,9 +10,9 @@ use core::slice;
 use crate::mask::*;
 use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
-pub struct Scalar;
+pub struct ScalarImpl;
 
-impl Arch for Scalar {
+impl Arch for ScalarImpl {
     type f32 = f32x1;
     type f64 = f64x1;
 

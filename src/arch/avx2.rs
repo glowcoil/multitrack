@@ -15,9 +15,9 @@ use std::arch::x86_64::*;
 use crate::mask::*;
 use crate::simd::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
-pub struct Avx2;
+pub struct Avx2Impl;
 
-impl Arch for Avx2 {
+impl Arch for Avx2Impl {
     type f32 = f32x8;
     type f64 = f64x4;
 
