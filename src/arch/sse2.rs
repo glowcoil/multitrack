@@ -1,20 +1,20 @@
 #![allow(non_camel_case_types)]
 
-use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
-use crate::mask::*;
-use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
+use core::fmt::{self, Debug};
+use core::mem;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+use core::ops::{Index, IndexMut};
+use core::slice;
 
 #[cfg(target_arch = "x86")]
 use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use core::fmt::{self, Debug};
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
-use core::ops::{Index, IndexMut};
-use std::mem;
-use std::slice;
+use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
+use crate::mask::*;
+use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 pub struct Sse2;
 

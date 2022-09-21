@@ -1,14 +1,14 @@
 #![allow(non_camel_case_types)]
 
-use crate::mask::*;
-use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-
 use core::fmt::{self, Debug};
 use core::num::Wrapping;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
 use core::slice;
+
+use crate::mask::*;
+use crate::{Arch, Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 
 pub struct Scalar;
 
