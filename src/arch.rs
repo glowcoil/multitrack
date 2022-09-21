@@ -12,7 +12,7 @@ pub trait Task {
     fn run<A: Arch>(self) -> Self::Result;
 }
 
-pub unsafe trait Possible {
+pub trait Possible {
     fn supported() -> bool;
     unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result;
 
@@ -47,7 +47,7 @@ pub trait Supported {
 
 pub struct Scalar;
 
-unsafe impl Possible for Scalar {
+impl Possible for Scalar {
     fn supported() -> bool {
         true
     }
@@ -65,7 +65,7 @@ impl Supported for Scalar {
 
 pub struct Sse2;
 
-unsafe impl Possible for Sse2 {
+impl Possible for Sse2 {
     fn supported() -> bool {
         is_x86_feature_detected!("sse2")
     }
@@ -84,7 +84,7 @@ impl Supported for Sse2 {
 
 pub struct Sse4_2;
 
-unsafe impl Possible for Sse4_2 {
+impl Possible for Sse4_2 {
     fn supported() -> bool {
         is_x86_feature_detected!("sse4.2")
     }
@@ -103,7 +103,7 @@ impl Supported for Sse4_2 {
 
 pub struct Avx2;
 
-unsafe impl Possible for Avx2 {
+impl Possible for Avx2 {
     fn supported() -> bool {
         is_x86_feature_detected!("avx2")
     }
