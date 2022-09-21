@@ -53,27 +53,32 @@ macro_rules! float_type {
 
             const LANES: usize = $lanes;
 
+            #[inline]
             fn new(elem: Self::Elem) -> Self {
                 unsafe { $float($set(elem)) }
             }
 
+            #[inline]
             fn as_slice(&self) -> &[Self::Elem] {
                 unsafe {
                     slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES)
                 }
             }
 
+            #[inline]
             fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
                 unsafe {
                     slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES)
                 }
             }
 
+            #[inline]
             fn from_slice(slice: &[Self::Elem]) -> Self {
                 assert!(slice.len() == Self::LANES);
                 unsafe { $float($load(slice.as_ptr())) }
             }
 
+            #[inline]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
                 assert!(slice.len() == Self::LANES);
                 unsafe {
@@ -81,10 +86,12 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
                 unsafe { slice.align_to::<Self>() }
             }
 
+            #[inline]
             fn align_mut_slice(
                 slice: &mut [Self::Elem],
             ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
@@ -93,12 +100,14 @@ macro_rules! float_type {
         }
 
         impl Debug for $float {
+            #[inline]
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 Debug::fmt(self.as_slice(), fmt)
             }
         }
 
         impl Default for $float {
+            #[inline]
             fn default() -> Self {
                 unsafe { mem::zeroed() }
             }
@@ -107,6 +116,7 @@ macro_rules! float_type {
         impl LanesEq for $float {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_EQ_OQ);
@@ -114,6 +124,7 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn ne(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_NEQ_UQ);
@@ -123,6 +134,7 @@ macro_rules! float_type {
         }
 
         impl LanesOrd for $float {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_LT_OQ);
@@ -130,6 +142,7 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn le(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_LE_OQ);
@@ -137,6 +150,7 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn gt(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_GT_OQ);
@@ -144,6 +158,7 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn ge(&self, other: &Self) -> Self::Output {
                 unsafe {
                     let res = $cmp(self.0, other.0, _CMP_GE_OQ);
@@ -151,10 +166,12 @@ macro_rules! float_type {
                 }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $float($max(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $float($min(self.0, other.0)) }
             }
@@ -163,18 +180,21 @@ macro_rules! float_type {
         impl Index<usize> for $float {
             type Output = <Self as Simd>::Elem;
 
+            #[inline]
             fn index(&self, index: usize) -> &Self::Output {
                 &self.as_slice()[index]
             }
         }
 
         impl IndexMut<usize> for $float {
+            #[inline]
             fn index_mut(&mut self, index: usize) -> &mut Self::Output {
                 &mut self.as_mut_slice()[index]
             }
         }
 
         impl Select<$float> for $mask {
+            #[inline]
             fn select(self, if_true: $float, if_false: $float) -> $float {
                 unsafe {
                     let mask = $cast_from_int(self.0);
@@ -188,12 +208,14 @@ macro_rules! float_type {
         impl Add for $float {
             type Output = Self;
 
+            #[inline]
             fn add(self, rhs: Self) -> Self {
                 unsafe { $float($add(self.0, rhs.0)) }
             }
         }
 
         impl AddAssign for $float {
+            #[inline]
             fn add_assign(&mut self, rhs: Self) {
                 *self = *self + rhs;
             }
@@ -202,12 +224,14 @@ macro_rules! float_type {
         impl Sub for $float {
             type Output = Self;
 
+            #[inline]
             fn sub(self, rhs: Self) -> Self {
                 unsafe { $float($sub(self.0, rhs.0)) }
             }
         }
 
         impl SubAssign for $float {
+            #[inline]
             fn sub_assign(&mut self, rhs: Self) {
                 *self = *self - rhs;
             }
@@ -216,12 +240,14 @@ macro_rules! float_type {
         impl Mul for $float {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $float($mul(self.0, rhs.0)) }
             }
         }
 
         impl MulAssign for $float {
+            #[inline]
             fn mul_assign(&mut self, rhs: Self) {
                 *self = *self * rhs;
             }
@@ -230,12 +256,14 @@ macro_rules! float_type {
         impl Div for $float {
             type Output = Self;
 
+            #[inline]
             fn div(self, rhs: Self) -> Self {
                 unsafe { $float($div(self.0, rhs.0)) }
             }
         }
 
         impl DivAssign for $float {
+            #[inline]
             fn div_assign(&mut self, rhs: Self) {
                 *self = *self / rhs;
             }
@@ -244,6 +272,7 @@ macro_rules! float_type {
         impl Neg for $float {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 unsafe { $float($xor(self.0, $set(-0.0))) }
             }
@@ -263,27 +292,32 @@ macro_rules! int_type {
 
             const LANES: usize = $lanes;
 
+            #[inline]
             fn new(elem: Self::Elem) -> Self {
                 unsafe { $int($set(mem::transmute(elem))) }
             }
 
+            #[inline]
             fn as_slice(&self) -> &[Self::Elem] {
                 unsafe {
                     slice::from_raw_parts(self as *const Self as *const Self::Elem, Self::LANES)
                 }
             }
 
+            #[inline]
             fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
                 unsafe {
                     slice::from_raw_parts_mut(self as *mut Self as *mut Self::Elem, Self::LANES)
                 }
             }
 
+            #[inline]
             fn from_slice(slice: &[Self::Elem]) -> Self {
                 assert!(slice.len() == Self::LANES);
                 unsafe { $int(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
             }
 
+            #[inline]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
                 assert!(slice.len() == Self::LANES);
                 unsafe {
@@ -291,10 +325,12 @@ macro_rules! int_type {
                 }
             }
 
+            #[inline]
             fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
                 unsafe { slice.align_to::<Self>() }
             }
 
+            #[inline]
             fn align_mut_slice(
                 slice: &mut [Self::Elem],
             ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
@@ -303,12 +339,14 @@ macro_rules! int_type {
         }
 
         impl Debug for $int {
+            #[inline]
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 Debug::fmt(self.as_slice(), fmt)
             }
         }
 
         impl Default for $int {
+            #[inline]
             fn default() -> Self {
                 unsafe { mem::zeroed() }
             }
@@ -317,6 +355,7 @@ macro_rules! int_type {
         impl LanesEq for $int {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmp(self.0, other.0)) }
             }
@@ -325,12 +364,14 @@ macro_rules! int_type {
         impl Index<usize> for $int {
             type Output = <Self as Simd>::Elem;
 
+            #[inline]
             fn index(&self, index: usize) -> &Self::Output {
                 &self.as_slice()[index]
             }
         }
 
         impl IndexMut<usize> for $int {
+            #[inline]
             fn index_mut(&mut self, index: usize) -> &mut Self::Output {
                 &mut self.as_mut_slice()[index]
             }
@@ -341,12 +382,14 @@ macro_rules! int_type {
         impl BitAnd for $int {
             type Output = Self;
 
+            #[inline]
             fn bitand(self, rhs: Self) -> Self::Output {
                 unsafe { $int(_mm256_and_si256(self.0, rhs.0)) }
             }
         }
 
         impl BitAndAssign for $int {
+            #[inline]
             fn bitand_assign(&mut self, rhs: Self) {
                 *self = *self & rhs;
             }
@@ -355,12 +398,14 @@ macro_rules! int_type {
         impl BitOr for $int {
             type Output = Self;
 
+            #[inline]
             fn bitor(self, rhs: Self) -> Self::Output {
                 unsafe { $int(_mm256_or_si256(self.0, rhs.0)) }
             }
         }
 
         impl BitOrAssign for $int {
+            #[inline]
             fn bitor_assign(&mut self, rhs: Self) {
                 *self = *self | rhs;
             }
@@ -369,12 +414,14 @@ macro_rules! int_type {
         impl BitXor for $int {
             type Output = Self;
 
+            #[inline]
             fn bitxor(self, rhs: Self) -> Self::Output {
                 unsafe { $int(_mm256_xor_si256(self.0, rhs.0)) }
             }
         }
 
         impl BitXorAssign for $int {
+            #[inline]
             fn bitxor_assign(&mut self, rhs: Self) {
                 *self = *self ^ rhs;
             }
@@ -383,6 +430,7 @@ macro_rules! int_type {
         impl Not for $int {
             type Output = Self;
 
+            #[inline]
             fn not(self) -> Self::Output {
                 unsafe {
                     let zero = _mm256_setzero_si256();
@@ -392,6 +440,7 @@ macro_rules! int_type {
         }
 
         impl Select<$int> for $mask {
+            #[inline]
             fn select(self, if_true: $int, if_false: $int) -> $int {
                 unsafe { $int(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
             }
@@ -402,18 +451,22 @@ macro_rules! int_type {
 macro_rules! impl_ord_uint {
     ($uint:ident, $mask:ident, $cmpeq:ident, $max:ident, $min:ident) => {
         impl LanesOrd for $uint {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 !other.le(self)
             }
 
+            #[inline]
             fn le(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmpeq(self.0, $min(self.0, other.0))) }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $uint($max(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $uint($min(self.0, other.0)) }
             }
@@ -424,14 +477,17 @@ macro_rules! impl_ord_uint {
 macro_rules! impl_ord_int {
     ($int:ident, $mask:ident, $cmpgt:ident, $max:ident, $min:ident) => {
         impl LanesOrd for $int {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmpgt(other.0, self.0)) }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $int($max(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $int($min(self.0, other.0)) }
             }
@@ -442,18 +498,22 @@ macro_rules! impl_ord_int {
 macro_rules! impl_ord_mask {
     ($mask:ident) => {
         impl LanesOrd for $mask {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
             }
 
+            #[inline]
             fn le(&self, other: &Self) -> Self::Output {
                 unsafe { $mask(_mm256_or_si256(other.0, _mm256_cmpeq_epi8(self.0, other.0))) }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $mask(_mm256_or_si256(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $mask(_mm256_and_si256(self.0, other.0)) }
             }
@@ -468,12 +528,14 @@ macro_rules! impl_int {
         impl Add for $int {
             type Output = Self;
 
+            #[inline]
             fn add(self, rhs: Self) -> Self {
                 unsafe { $int($add(self.0, rhs.0)) }
             }
         }
 
         impl AddAssign for $int {
+            #[inline]
             fn add_assign(&mut self, rhs: Self) {
                 *self = *self + rhs;
             }
@@ -482,18 +544,21 @@ macro_rules! impl_int {
         impl Sub for $int {
             type Output = Self;
 
+            #[inline]
             fn sub(self, rhs: Self) -> Self {
                 unsafe { $int($sub(self.0, rhs.0)) }
             }
         }
 
         impl SubAssign for $int {
+            #[inline]
             fn sub_assign(&mut self, rhs: Self) {
                 *self = *self - rhs;
             }
         }
 
         impl MulAssign for $int {
+            #[inline]
             fn mul_assign(&mut self, rhs: Self) {
                 *self = *self * rhs;
             }
@@ -502,6 +567,7 @@ macro_rules! impl_int {
         impl Neg for $int {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 unsafe { $int($sub($set(0), self.0)) }
             }
@@ -514,6 +580,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int8 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let lhs_odd = _mm256_srli_epi16(self.0, 8);
@@ -529,6 +596,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int16 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $int16(_mm256_mullo_epi16(self.0, rhs.0)) }
             }
@@ -537,6 +605,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int32 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $int32(_mm256_mullo_epi32(self.0, rhs.0)) }
             }
@@ -545,6 +614,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int64 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let low_high = _mm256_mullo_epi32(self.0, _mm256_slli_epi64(rhs.0, 32));
@@ -588,6 +658,7 @@ impl_int_mul! { u8x32, u16x16, u32x8, u64x4 }
 // we have to use a biased signed comparison (and then fall back to the default impls of min/max in
 // terms of le and select).
 impl LanesOrd for u64x4 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             let bias = _mm256_set1_epi64x(i64::MIN);
@@ -615,6 +686,7 @@ impl_int_mul! { i8x32, i16x16, i32x8, i64x4 }
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
 // back to the default impls of min and max in terms of le and select.
 impl LanesOrd for i64x4 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe { m64x4(_mm256_cmpgt_epi64(other.0, self.0)) }
     }

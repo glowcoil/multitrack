@@ -43,6 +43,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int8 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let lhs_odd = _mm_srli_epi16(self.0, 8);
@@ -58,6 +59,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int16 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $int16(_mm_mullo_epi16(self.0, rhs.0)) }
             }
@@ -66,6 +68,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int32 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let lhs_odd = _mm_srli_epi64(self.0, 32);
@@ -81,6 +84,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int64 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let low_high = _mm_mul_epu32(self.0, _mm_srli_epi64(rhs.0, 32));
@@ -94,14 +98,17 @@ macro_rules! impl_int_mul {
     };
 }
 
+#[inline]
 unsafe fn _mm_blendv_ps_fallback(a: __m128, b: __m128, mask: __m128) -> __m128 {
     _mm_or_ps(_mm_andnot_ps(mask, a), _mm_and_ps(mask, b))
 }
 
+#[inline]
 unsafe fn _mm_blendv_pd_fallback(a: __m128d, b: __m128d, mask: __m128d) -> __m128d {
     _mm_or_pd(_mm_andnot_pd(mask, a), _mm_and_pd(mask, b))
 }
 
+#[inline]
 unsafe fn _mm_blendv_epi8_fallback(a: __m128i, b: __m128i, mask: __m128i) -> __m128i {
     _mm_or_si128(_mm_andnot_si128(mask, a), _mm_and_si128(mask, b))
 }
@@ -132,24 +139,29 @@ impl_int_mul! { u8x16, u16x8, u32x4, u64x2 }
 impl LanesEq for u8x16 {
     type Output = m8x16;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m8x16(_mm_cmpeq_epi8(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for u8x16 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         !other.le(self)
     }
 
+    #[inline]
     fn le(&self, other: &Self) -> Self::Output {
         unsafe { m8x16(_mm_cmpeq_epi8(self.0, _mm_min_epu8(self.0, other.0))) }
     }
 
+    #[inline]
     fn max(self, other: Self) -> Self {
         unsafe { u8x16(_mm_max_epu8(self.0, other.0)) }
     }
 
+    #[inline]
     fn min(self, other: Self) -> Self {
         unsafe { u8x16(_mm_min_epu8(self.0, other.0)) }
     }
@@ -158,12 +170,14 @@ impl LanesOrd for u8x16 {
 impl LanesEq for u16x8 {
     type Output = m16x8;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m16x8(_mm_cmpeq_epi16(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for u16x8 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             let bias = _mm_set1_epi16(i16::MIN);
@@ -178,12 +192,14 @@ impl LanesOrd for u16x8 {
 impl LanesEq for u32x4 {
     type Output = m32x4;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m32x4(_mm_cmpeq_epi32(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for u32x4 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             let bias = _mm_set1_epi32(i32::MIN);
@@ -198,6 +214,7 @@ impl LanesOrd for u32x4 {
 impl LanesEq for u64x2 {
     type Output = m64x2;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe {
             // Compare high and low 32-bit integers separately, then swap and AND together
@@ -209,6 +226,7 @@ impl LanesEq for u64x2 {
 }
 
 impl LanesOrd for u64x2 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             // If we split two 64-bit integers L and R into pairs of 32-bit integers (Lh, Ll) and
@@ -243,12 +261,14 @@ impl_int_mul! { i8x16, i16x8, i32x4, i64x2 }
 impl LanesEq for i8x16 {
     type Output = m8x16;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m8x16(_mm_cmpeq_epi8(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for i8x16 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe { m8x16(_mm_cmpgt_epi8(other.0, self.0)) }
     }
@@ -257,20 +277,24 @@ impl LanesOrd for i8x16 {
 impl LanesEq for i16x8 {
     type Output = m16x8;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m16x8(_mm_cmpeq_epi16(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for i16x8 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe { m16x8(_mm_cmplt_epi16(self.0, other.0)) }
     }
 
+    #[inline]
     fn max(self, other: Self) -> Self {
         unsafe { i16x8(_mm_max_epi16(self.0, other.0)) }
     }
 
+    #[inline]
     fn min(self, other: Self) -> Self {
         unsafe { i16x8(_mm_min_epi16(self.0, other.0)) }
     }
@@ -279,12 +303,14 @@ impl LanesOrd for i16x8 {
 impl LanesEq for i32x4 {
     type Output = m32x4;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m32x4(_mm_cmpeq_epi32(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for i32x4 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe { m32x4(_mm_cmplt_epi32(self.0, other.0)) }
     }
@@ -293,6 +319,7 @@ impl LanesOrd for i32x4 {
 impl LanesEq for i64x2 {
     type Output = m64x2;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe {
             // Compare high and low 32-bit integers separately, then swap and AND together
@@ -304,6 +331,7 @@ impl LanesEq for i64x2 {
 }
 
 impl LanesOrd for i64x2 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             // If we split two 64-bit integers L and R into pairs of 32-bit integers (Lh, Ll) and

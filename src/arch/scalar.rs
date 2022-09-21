@@ -44,30 +44,37 @@ macro_rules! scalar_type {
 
             const LANES: usize = 1;
 
+            #[inline]
             fn new(elem: Self::Elem) -> Self {
                 $scalar(elem)
             }
 
+            #[inline]
             fn as_slice(&self) -> &[Self::Elem] {
                 slice::from_ref(&self.0)
             }
 
+            #[inline]
             fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
                 slice::from_mut(&mut self.0)
             }
 
+            #[inline]
             fn from_slice(slice: &[Self::Elem]) -> Self {
                 Self::new(slice[0])
             }
 
+            #[inline]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
                 slice[0] = self.0;
             }
 
+            #[inline]
             fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
                 unsafe { slice.align_to::<Self>() }
             }
 
+            #[inline]
             fn align_mut_slice(
                 slice: &mut [Self::Elem],
             ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
@@ -78,12 +85,14 @@ macro_rules! scalar_type {
         impl LanesEq for $scalar {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &$scalar) -> $mask {
                 $mask((self.0 == other.0).into())
             }
         }
 
         impl LanesOrd for $scalar {
+            #[inline]
             fn lt(&self, other: &$scalar) -> $mask {
                 $mask((self.0 < other.0).into())
             }
@@ -92,6 +101,7 @@ macro_rules! scalar_type {
         impl Index<usize> for $scalar {
             type Output = $inner;
 
+            #[inline]
             fn index(&self, index: usize) -> &$inner {
                 assert!(index == 0);
                 &self.0
@@ -99,6 +109,7 @@ macro_rules! scalar_type {
         }
 
         impl IndexMut<usize> for $scalar {
+            #[inline]
             fn index_mut(&mut self, index: usize) -> &mut $inner {
                 assert!(index == 0);
                 &mut self.0
@@ -106,12 +117,14 @@ macro_rules! scalar_type {
         }
 
         impl Debug for $scalar {
+            #[inline]
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt.debug_list().entry(&self.0).finish()
             }
         }
 
         impl Select<$scalar> for $mask {
+            #[inline]
             fn select(self, if_true: $scalar, if_false: $scalar) -> $scalar {
                 if self.0.into() {
                     if_true
@@ -135,30 +148,37 @@ macro_rules! wrapping_scalar_type {
 
             const LANES: usize = 1;
 
+            #[inline]
             fn new(elem: Self::Elem) -> Self {
                 $scalar(Wrapping(elem))
             }
 
+            #[inline]
             fn as_slice(&self) -> &[Self::Elem] {
                 slice::from_ref(&self.0 .0)
             }
 
+            #[inline]
             fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
                 slice::from_mut(&mut self.0 .0)
             }
 
+            #[inline]
             fn from_slice(slice: &[Self::Elem]) -> Self {
                 Self::new(slice[0])
             }
 
+            #[inline]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
                 slice[0] = self.0 .0;
             }
 
+            #[inline]
             fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
                 unsafe { slice.align_to::<Self>() }
             }
 
+            #[inline]
             fn align_mut_slice(
                 slice: &mut [Self::Elem],
             ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
@@ -169,12 +189,14 @@ macro_rules! wrapping_scalar_type {
         impl LanesEq for $scalar {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &$scalar) -> $mask {
                 $mask((self.0 == other.0).into())
             }
         }
 
         impl LanesOrd for $scalar {
+            #[inline]
             fn lt(&self, other: &$scalar) -> $mask {
                 $mask((self.0 < other.0).into())
             }
@@ -183,6 +205,7 @@ macro_rules! wrapping_scalar_type {
         impl Index<usize> for $scalar {
             type Output = $inner;
 
+            #[inline]
             fn index(&self, index: usize) -> &$inner {
                 assert!(index == 0);
                 &self.0 .0
@@ -190,6 +213,7 @@ macro_rules! wrapping_scalar_type {
         }
 
         impl IndexMut<usize> for $scalar {
+            #[inline]
             fn index_mut(&mut self, index: usize) -> &mut $inner {
                 assert!(index == 0);
                 &mut self.0 .0
@@ -197,12 +221,14 @@ macro_rules! wrapping_scalar_type {
         }
 
         impl Debug for $scalar {
+            #[inline]
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt.debug_list().entry(&self.0 .0).finish()
             }
         }
 
         impl Select<$scalar> for $mask {
+            #[inline]
             fn select(self, if_true: $scalar, if_false: $scalar) -> $scalar {
                 if self.0.into() {
                     if_true
@@ -221,12 +247,14 @@ macro_rules! impl_float {
         impl Add for $float {
             type Output = Self;
 
+            #[inline]
             fn add(self, rhs: Self) -> Self {
                 $float(self.0 + rhs.0)
             }
         }
 
         impl AddAssign for $float {
+            #[inline]
             fn add_assign(&mut self, rhs: Self) {
                 self.0 += rhs.0;
             }
@@ -235,12 +263,14 @@ macro_rules! impl_float {
         impl Sub for $float {
             type Output = Self;
 
+            #[inline]
             fn sub(self, rhs: Self) -> Self {
                 $float(self.0 - rhs.0)
             }
         }
 
         impl SubAssign for $float {
+            #[inline]
             fn sub_assign(&mut self, rhs: Self) {
                 self.0 -= rhs.0;
             }
@@ -249,12 +279,14 @@ macro_rules! impl_float {
         impl Mul for $float {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 $float(self.0 * rhs.0)
             }
         }
 
         impl MulAssign for $float {
+            #[inline]
             fn mul_assign(&mut self, rhs: Self) {
                 self.0 *= rhs.0;
             }
@@ -263,12 +295,14 @@ macro_rules! impl_float {
         impl Div for $float {
             type Output = Self;
 
+            #[inline]
             fn div(self, rhs: Self) -> Self {
                 $float(self.0 / rhs.0)
             }
         }
 
         impl DivAssign for $float {
+            #[inline]
             fn div_assign(&mut self, rhs: Self) {
                 self.0 /= rhs.0;
             }
@@ -277,6 +311,7 @@ macro_rules! impl_float {
         impl Neg for $float {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 $float(-self.0)
             }
@@ -291,12 +326,14 @@ macro_rules! impl_int {
         impl Add for $int {
             type Output = Self;
 
+            #[inline]
             fn add(self, rhs: Self) -> Self {
                 $int(self.0 + rhs.0)
             }
         }
 
         impl AddAssign for $int {
+            #[inline]
             fn add_assign(&mut self, rhs: Self) {
                 self.0 += rhs.0;
             }
@@ -305,12 +342,14 @@ macro_rules! impl_int {
         impl Sub for $int {
             type Output = Self;
 
+            #[inline]
             fn sub(self, rhs: Self) -> Self {
                 $int(self.0 - rhs.0)
             }
         }
 
         impl SubAssign for $int {
+            #[inline]
             fn sub_assign(&mut self, rhs: Self) {
                 self.0 -= rhs.0;
             }
@@ -319,12 +358,14 @@ macro_rules! impl_int {
         impl Mul for $int {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 $int(self.0 * rhs.0)
             }
         }
 
         impl MulAssign for $int {
+            #[inline]
             fn mul_assign(&mut self, rhs: Self) {
                 self.0 *= rhs.0;
             }
@@ -333,12 +374,14 @@ macro_rules! impl_int {
         impl Div for $int {
             type Output = Self;
 
+            #[inline]
             fn div(self, rhs: Self) -> Self {
                 $int(self.0 / rhs.0)
             }
         }
 
         impl DivAssign for $int {
+            #[inline]
             fn div_assign(&mut self, rhs: Self) {
                 self.0 /= rhs.0;
             }
@@ -347,6 +390,7 @@ macro_rules! impl_int {
         impl Neg for $int {
             type Output = Self;
 
+            #[inline]
             fn neg(self) -> Self {
                 $int(-self.0)
             }
@@ -361,12 +405,14 @@ macro_rules! impl_bitwise {
         impl BitAnd for $bitwise {
             type Output = Self;
 
+            #[inline]
             fn bitand(self, rhs: Self) -> Self::Output {
                 $bitwise(self.0 & rhs.0)
             }
         }
 
         impl BitAndAssign for $bitwise {
+            #[inline]
             fn bitand_assign(&mut self, rhs: Self) {
                 self.0 &= rhs.0;
             }
@@ -375,12 +421,14 @@ macro_rules! impl_bitwise {
         impl BitOr for $bitwise {
             type Output = Self;
 
+            #[inline]
             fn bitor(self, rhs: Self) -> Self::Output {
                 $bitwise(self.0 | rhs.0)
             }
         }
 
         impl BitOrAssign for $bitwise {
+            #[inline]
             fn bitor_assign(&mut self, rhs: Self) {
                 self.0 |= rhs.0;
             }
@@ -389,12 +437,14 @@ macro_rules! impl_bitwise {
         impl BitXor for $bitwise {
             type Output = Self;
 
+            #[inline]
             fn bitxor(self, rhs: Self) -> Self::Output {
                 $bitwise(self.0 ^ rhs.0)
             }
         }
 
         impl BitXorAssign for $bitwise {
+            #[inline]
             fn bitxor_assign(&mut self, rhs: Self) {
                 self.0 ^= rhs.0;
             }
@@ -403,6 +453,7 @@ macro_rules! impl_bitwise {
         impl Not for $bitwise {
             type Output = Self;
 
+            #[inline]
             fn not(self) -> Self::Output {
                 $bitwise(!self.0)
             }

@@ -43,24 +43,29 @@ macro_rules! impl_ord_uint {
         impl LanesEq for $uint {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmpeq(self.0, other.0)) }
             }
         }
 
         impl LanesOrd for $uint {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 !other.le(self)
             }
 
+            #[inline]
             fn le(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmpeq(self.0, $min(self.0, other.0))) }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $uint($max(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $uint($min(self.0, other.0)) }
             }
@@ -73,20 +78,24 @@ macro_rules! impl_ord_int {
         impl LanesEq for $int {
             type Output = $mask;
 
+            #[inline]
             fn eq(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmpeq(self.0, other.0)) }
             }
         }
 
         impl LanesOrd for $int {
+            #[inline]
             fn lt(&self, other: &Self) -> Self::Output {
                 unsafe { $mask($cmplt(self.0, other.0)) }
             }
 
+            #[inline]
             fn max(self, other: Self) -> Self {
                 unsafe { $int($max(self.0, other.0)) }
             }
 
+            #[inline]
             fn min(self, other: Self) -> Self {
                 unsafe { $int($min(self.0, other.0)) }
             }
@@ -99,6 +108,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int8 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let lhs_odd = _mm_srli_epi16(self.0, 8);
@@ -114,6 +124,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int16 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $int16(_mm_mullo_epi16(self.0, rhs.0)) }
             }
@@ -122,6 +133,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int32 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe { $int32(_mm_mullo_epi32(self.0, rhs.0)) }
             }
@@ -130,6 +142,7 @@ macro_rules! impl_int_mul {
         impl Mul for $int64 {
             type Output = Self;
 
+            #[inline]
             fn mul(self, rhs: Self) -> Self {
                 unsafe {
                     let low_high = _mm_mul_epu32(self.0, _mm_srli_epi64(rhs.0, 32));
@@ -172,12 +185,14 @@ impl_int_mul! { u8x16, u16x8, u32x4, u64x2 }
 impl LanesEq for u64x2 {
     type Output = m64x2;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m64x2(_mm_cmpeq_epi64(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for u64x2 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe {
             let bias = _mm_set1_epi64x(i64::MIN);
@@ -205,12 +220,14 @@ impl_int_mul! { i8x16, i16x8, i32x4, i64x2 }
 impl LanesEq for i64x2 {
     type Output = m64x2;
 
+    #[inline]
     fn eq(&self, other: &Self) -> Self::Output {
         unsafe { m64x2(_mm_cmpeq_epi64(self.0, other.0)) }
     }
 }
 
 impl LanesOrd for i64x2 {
+    #[inline]
     fn lt(&self, other: &Self) -> Self::Output {
         unsafe { m64x2(_mm_cmpgt_epi64(other.0, self.0)) }
     }
