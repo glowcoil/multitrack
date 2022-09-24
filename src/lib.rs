@@ -42,6 +42,7 @@ pub trait Possible {
 
     unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result;
 
+    #[inline]
     fn try_invoke<T: Task>(task: T) -> Option<T::Result> {
         if Self::supported() {
             Some(unsafe { Self::invoke_unchecked::<T>(task) })
@@ -50,6 +51,7 @@ pub trait Possible {
         }
     }
 
+    #[inline]
     unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
         fn invoke<A: Possible + ?Sized, U: Task>(task: U) -> U::Result {
             unsafe { A::invoke_unchecked::<U>(task) }
@@ -58,10 +60,12 @@ pub trait Possible {
         invoke::<Self, T>
     }
 
+    #[inline]
     fn specialize_unsafe<T: Task>() -> unsafe fn(T) -> T::Result {
         unsafe { Self::specialize_unchecked::<T>() }
     }
 
+    #[inline]
     fn try_specialize<T: Task>() -> Option<fn(T) -> T::Result> {
         if Self::supported() {
             Some(unsafe { Self::specialize_unchecked::<T>() })
@@ -72,10 +76,12 @@ pub trait Possible {
 }
 
 pub unsafe trait Supported: Possible {
+    #[inline]
     fn invoke<T: Task>(task: T) -> T::Result {
         unsafe { Self::invoke_unchecked(task) }
     }
 
+    #[inline]
     fn specialize<T: Task>() -> fn(T) -> T::Result {
         fn invoke<A: Supported + ?Sized, U: Task>(task: U) -> U::Result {
             A::invoke::<U>(task)
