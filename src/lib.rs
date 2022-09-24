@@ -359,18 +359,23 @@ mod tests {
         Scalar::invoke(TestArch);
     }
 
-    #[test]
-    fn sse2() {
-        Sse2::invoke(TestArch);
-    }
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    mod x86 {
+        use super::*;
 
-    #[test]
-    fn sse4_2() {
-        Sse4_2::try_invoke(TestArch);
-    }
+        #[test]
+        fn sse2() {
+            Sse2::invoke(TestArch);
+        }
 
-    #[test]
-    fn avx2() {
-        Avx2::try_invoke(TestArch);
+        #[test]
+        fn sse4_2() {
+            Sse4_2::try_invoke(TestArch);
+        }
+
+        #[test]
+        fn avx2() {
+            Avx2::try_invoke(TestArch);
+        }
     }
 }
