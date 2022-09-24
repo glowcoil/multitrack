@@ -71,8 +71,10 @@ pub trait Possible {
     }
 }
 
-pub trait Supported {
-    fn invoke<T: Task>(task: T) -> T::Result;
+pub unsafe trait Supported: Possible {
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { Self::invoke_unchecked(task) }
+    }
 
     fn specialize<T: Task>() -> fn(T) -> T::Result {
         fn invoke<A: Supported + ?Sized, U: Task>(task: U) -> U::Result {

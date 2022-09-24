@@ -18,11 +18,7 @@ impl Possible for Scalar {
     }
 }
 
-impl Supported for Scalar {
-    fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { Self::invoke_unchecked::<T>(task) }
-    }
-}
+unsafe impl Supported for Scalar {}
 
 pub struct Sse2;
 
@@ -37,11 +33,7 @@ impl Possible for Sse2 {
 }
 
 #[cfg(target_feature = "sse2")]
-impl Supported for Sse2 {
-    fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { Self::invoke_unchecked::<T>(task) }
-    }
-}
+unsafe impl Supported for Sse2 {}
 
 pub struct Sse4_2;
 
@@ -56,11 +48,7 @@ impl Possible for Sse4_2 {
 }
 
 #[cfg(target_feature = "sse4.2")]
-impl Supported for Sse4_2 {
-    fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { Self::invoke_unchecked::<T>(task) }
-    }
-}
+unsafe impl Supported for Sse4_2 {}
 
 pub struct Avx2;
 
@@ -75,8 +63,4 @@ impl Possible for Avx2 {
 }
 
 #[cfg(target_feature = "avx2")]
-impl Supported for Avx2 {
-    fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { Self::invoke_unchecked::<T>(task) }
-    }
-}
+unsafe impl Supported for Avx2 {}
