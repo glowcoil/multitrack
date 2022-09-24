@@ -1,49 +1,10 @@
-use crate::simd::Arch;
+use crate::{Possible, Supported, Task};
 
 mod avx2;
 mod scalar;
 mod sse2;
 mod sse4_2;
 mod sse_macros;
-
-pub trait Task {
-    type Result;
-
-    fn run<A: Arch>(self) -> Self::Result;
-}
-
-pub trait Possible {
-    fn supported() -> bool;
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result;
-
-    fn try_specialize<T: Task>() -> Option<fn(T) -> T::Result> {
-        if Self::supported() {
-            Some(unsafe { Self::specialize_unchecked::<T>() })
-        } else {
-            None
-        }
-    }
-
-    fn specialize_unsafe<T: Task>() -> unsafe fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
-    }
-
-    fn try_run<T: Task>(task: T) -> Option<T::Result> {
-        Self::try_specialize::<T>().map(|f| f(task))
-    }
-
-    unsafe fn run_unchecked<T: Task>(task: T) -> T::Result {
-        Self::specialize_unchecked::<T>()(task)
-    }
-}
-
-pub trait Supported {
-    fn specialize<T: Task>() -> fn(T) -> T::Result;
-
-    fn run<T: Task>(task: T) -> T::Result {
-        Self::specialize::<T>()(task)
-    }
-}
 
 pub struct Scalar;
 

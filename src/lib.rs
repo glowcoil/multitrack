@@ -2,13 +2,81 @@ pub mod arch;
 pub mod mask;
 pub mod simd;
 
+use {mask::*, simd::*};
+
+#[allow(non_camel_case_types)]
+pub trait Arch
+where
+    Self::m8: Select<Self::i8> + Select<Self::u8> + Select<Self::m8>,
+    Self::m16: Select<Self::i16> + Select<Self::u16> + Select<Self::m16>,
+    Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
+    Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
+{
+    type f32: Simd<Elem = f32, Mask = Self::m32> + Float;
+    type f64: Simd<Elem = f64, Mask = Self::m64> + Float;
+
+    type u8: Simd<Elem = u8, Mask = Self::m8> + Int + Bitwise;
+    type u16: Simd<Elem = u16, Mask = Self::m16> + Int + Bitwise;
+    type u32: Simd<Elem = u32, Mask = Self::m32> + Int + Bitwise;
+    type u64: Simd<Elem = u64, Mask = Self::m64> + Int + Bitwise;
+
+    type i8: Simd<Elem = i8, Mask = Self::m8> + Int + Bitwise;
+    type i16: Simd<Elem = i16, Mask = Self::m16> + Int + Bitwise;
+    type i32: Simd<Elem = i32, Mask = Self::m32> + Int + Bitwise;
+    type i64: Simd<Elem = i64, Mask = Self::m64> + Int + Bitwise;
+
+    type m8: Simd<Elem = m8, Mask = Self::m8> + Bitwise;
+    type m16: Simd<Elem = m16, Mask = Self::m16> + Bitwise;
+    type m32: Simd<Elem = m32, Mask = Self::m32> + Bitwise;
+    type m64: Simd<Elem = m64, Mask = Self::m64> + Bitwise;
+}
+
+pub trait Task {
+    type Result;
+
+    fn run<A: Arch>(self) -> Self::Result;
+}
+
+pub trait Possible {
+    fn supported() -> bool;
+    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result;
+
+    fn try_specialize<T: Task>() -> Option<fn(T) -> T::Result> {
+        if Self::supported() {
+            Some(unsafe { Self::specialize_unchecked::<T>() })
+        } else {
+            None
+        }
+    }
+
+    fn specialize_unsafe<T: Task>() -> unsafe fn(T) -> T::Result {
+        unsafe { Self::specialize_unchecked::<T>() }
+    }
+
+    fn try_run<T: Task>(task: T) -> Option<T::Result> {
+        Self::try_specialize::<T>().map(|f| f(task))
+    }
+
+    unsafe fn run_unchecked<T: Task>(task: T) -> T::Result {
+        Self::specialize_unchecked::<T>()(task)
+    }
+}
+
+pub trait Supported {
+    fn specialize<T: Task>() -> fn(T) -> T::Result;
+
+    fn run<T: Task>(task: T) -> T::Result {
+        Self::specialize::<T>()(task)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::fmt::Debug;
     use core::ops::{Add, Div, Mul, Neg, Sub};
     use core::ops::{BitAnd, BitOr, BitXor, Not};
 
-    use crate::{arch::*, mask::*, simd::*};
+    use crate::{arch::*, mask::*, simd::*, Arch, Possible, Supported, Task};
 
     fn test_ops<S>(
         type_: &str,
