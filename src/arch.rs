@@ -1,4 +1,4 @@
-use crate::{Possible, Supported, Task};
+use crate::{Arch, Possible, Supported, Task};
 
 mod avx2;
 mod scalar;
@@ -16,7 +16,7 @@ impl Possible for Scalar {
 
     #[inline]
     unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
-        task.run::<scalar::ScalarImpl>()
+        scalar::ScalarImpl::invoke(task)
     }
 }
 
@@ -32,7 +32,7 @@ impl Possible for Sse2 {
 
     #[inline]
     unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
-        task.run::<sse2::Sse2Impl>()
+        sse2::Sse2Impl::invoke(task)
     }
 }
 
@@ -49,7 +49,7 @@ impl Possible for Sse4_2 {
 
     #[inline]
     unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
-        task.run::<sse4_2::Sse4_2Impl>()
+        sse4_2::Sse4_2Impl::invoke(task)
     }
 }
 
@@ -66,7 +66,7 @@ impl Possible for Avx2 {
 
     #[inline]
     unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
-        task.run::<avx2::Avx2Impl>()
+        avx2::Avx2Impl::invoke(task)
     }
 }
 

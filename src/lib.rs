@@ -29,6 +29,8 @@ where
     type m16: Simd<Elem = m16, Mask = Self::m16> + Bitwise;
     type m32: Simd<Elem = m32, Mask = Self::m32> + Bitwise;
     type m64: Simd<Elem = m64, Mask = Self::m64> + Bitwise;
+
+    fn invoke<T: Task>(task: T) -> T::Result;
 }
 
 pub trait Task {

@@ -15,7 +15,7 @@ use std::arch::x86_64::*;
 use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
 use crate::mask::*;
 use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-use crate::Arch;
+use crate::{Arch, Task};
 
 pub struct Sse4_2Impl;
 
@@ -37,6 +37,17 @@ impl Arch for Sse4_2Impl {
     type m16 = m16x8;
     type m32 = m32x4;
     type m64 = m64x2;
+
+    #[inline(always)]
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { invoke_sse4_2(task) }
+    }
+}
+
+#[target_feature(enable = "sse4.1")]
+#[inline]
+unsafe fn invoke_sse4_2<T: Task>(task: T) -> T::Result {
+    task.run::<Sse4_2Impl>()
 }
 
 macro_rules! impl_ord_uint {

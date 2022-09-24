@@ -14,7 +14,7 @@ use std::arch::x86_64::*;
 
 use crate::mask::*;
 use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-use crate::Arch;
+use crate::{Arch, Task};
 
 pub struct Avx2Impl;
 
@@ -36,6 +36,17 @@ impl Arch for Avx2Impl {
     type m16 = m16x16;
     type m32 = m32x8;
     type m64 = m64x4;
+
+    #[inline(always)]
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { invoke_avx2(task) }
+    }
+}
+
+#[target_feature(enable = "avx2")]
+#[inline]
+unsafe fn invoke_avx2<T: Task>(task: T) -> T::Result {
+    task.run::<Avx2Impl>()
 }
 
 macro_rules! float_type {

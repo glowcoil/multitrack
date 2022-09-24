@@ -9,7 +9,7 @@ use core::slice;
 
 use crate::mask::*;
 use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-use crate::Arch;
+use crate::{Arch, Task};
 
 pub struct ScalarImpl;
 
@@ -31,6 +31,16 @@ impl Arch for ScalarImpl {
     type m16 = m16x1;
     type m32 = m32x1;
     type m64 = m64x1;
+
+    #[inline(always)]
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { invoke_scalar(task) }
+    }
+}
+
+#[inline(always)]
+unsafe fn invoke_scalar<T: Task>(task: T) -> T::Result {
+    task.run::<ScalarImpl>()
 }
 
 macro_rules! scalar_type {
