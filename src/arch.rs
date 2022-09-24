@@ -13,14 +13,14 @@ impl Possible for Scalar {
         true
     }
 
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
-        T::run::<scalar::ScalarImpl>
+    unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
+        task.run::<scalar::ScalarImpl>()
     }
 }
 
 impl Supported for Scalar {
-    fn specialize<T: Task>() -> fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { Self::invoke_unchecked::<T>(task) }
     }
 }
 
@@ -31,15 +31,15 @@ impl Possible for Sse2 {
         is_x86_feature_detected!("sse2")
     }
 
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
-        T::run::<sse2::Sse2Impl>
+    unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
+        task.run::<sse2::Sse2Impl>()
     }
 }
 
 #[cfg(target_feature = "sse2")]
 impl Supported for Sse2 {
-    fn specialize<T: Task>() -> fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { Self::invoke_unchecked::<T>(task) }
     }
 }
 
@@ -50,15 +50,15 @@ impl Possible for Sse4_2 {
         is_x86_feature_detected!("sse4.2")
     }
 
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
-        T::run::<sse4_2::Sse4_2Impl>
+    unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
+        task.run::<sse4_2::Sse4_2Impl>()
     }
 }
 
 #[cfg(target_feature = "sse4.2")]
 impl Supported for Sse4_2 {
-    fn specialize<T: Task>() -> fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { Self::invoke_unchecked::<T>(task) }
     }
 }
 
@@ -69,14 +69,14 @@ impl Possible for Avx2 {
         is_x86_feature_detected!("avx2")
     }
 
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
-        T::run::<avx2::Avx2Impl>
+    unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result {
+        task.run::<avx2::Avx2Impl>()
     }
 }
 
 #[cfg(target_feature = "avx2")]
 impl Supported for Avx2 {
-    fn specialize<T: Task>() -> fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
+    fn invoke<T: Task>(task: T) -> T::Result {
+        unsafe { Self::invoke_unchecked::<T>(task) }
     }
 }

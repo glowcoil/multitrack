@@ -39,7 +39,28 @@ pub trait Task {
 
 pub trait Possible {
     fn supported() -> bool;
-    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result;
+
+    unsafe fn invoke_unchecked<T: Task>(task: T) -> T::Result;
+
+    fn try_invoke<T: Task>(task: T) -> Option<T::Result> {
+        if Self::supported() {
+            Some(unsafe { Self::invoke_unchecked::<T>(task) })
+        } else {
+            None
+        }
+    }
+
+    unsafe fn specialize_unchecked<T: Task>() -> fn(T) -> T::Result {
+        fn invoke<A: Possible + ?Sized, U: Task>(task: U) -> U::Result {
+            unsafe { A::invoke_unchecked::<U>(task) }
+        }
+
+        invoke::<Self, T>
+    }
+
+    fn specialize_unsafe<T: Task>() -> unsafe fn(T) -> T::Result {
+        unsafe { Self::specialize_unchecked::<T>() }
+    }
 
     fn try_specialize<T: Task>() -> Option<fn(T) -> T::Result> {
         if Self::supported() {
@@ -48,25 +69,17 @@ pub trait Possible {
             None
         }
     }
-
-    fn specialize_unsafe<T: Task>() -> unsafe fn(T) -> T::Result {
-        unsafe { Self::specialize_unchecked::<T>() }
-    }
-
-    fn try_run<T: Task>(task: T) -> Option<T::Result> {
-        Self::try_specialize::<T>().map(|f| f(task))
-    }
-
-    unsafe fn run_unchecked<T: Task>(task: T) -> T::Result {
-        Self::specialize_unchecked::<T>()(task)
-    }
 }
 
 pub trait Supported {
-    fn specialize<T: Task>() -> fn(T) -> T::Result;
+    fn invoke<T: Task>(task: T) -> T::Result;
 
-    fn run<T: Task>(task: T) -> T::Result {
-        Self::specialize::<T>()(task)
+    fn specialize<T: Task>() -> fn(T) -> T::Result {
+        fn invoke<A: Supported + ?Sized, U: Task>(task: U) -> U::Result {
+            A::invoke::<U>(task)
+        }
+
+        invoke::<Self, T>
     }
 }
 
@@ -333,21 +346,21 @@ mod tests {
 
     #[test]
     fn scalar() {
-        Scalar::run(TestArch);
+        Scalar::invoke(TestArch);
     }
 
     #[test]
     fn sse2() {
-        Sse2::run(TestArch);
+        Sse2::invoke(TestArch);
     }
 
     #[test]
     fn sse4_2() {
-        Sse4_2::try_run(TestArch);
+        Sse4_2::try_invoke(TestArch);
     }
 
     #[test]
     fn avx2() {
-        Avx2::try_run(TestArch);
+        Avx2::try_invoke(TestArch);
     }
 }
