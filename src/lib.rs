@@ -2,6 +2,8 @@ pub mod arch;
 pub mod mask;
 pub mod simd;
 
+pub use multitrack_attributes::specialize;
+
 use {mask::*, simd::*};
 
 #[allow(non_camel_case_types)]
