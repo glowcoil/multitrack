@@ -14,6 +14,7 @@ macro_rules! mask_type {
         }
 
         impl From<bool> for $mask {
+            #[inline]
             fn from(value: bool) -> $mask {
                 if value {
                     $mask::TRUE
@@ -24,6 +25,7 @@ macro_rules! mask_type {
         }
 
         impl From<$mask> for bool {
+            #[inline]
             fn from(value: $mask) -> bool {
                 value == $mask::TRUE
             }
@@ -32,12 +34,14 @@ macro_rules! mask_type {
         impl BitAnd for $mask {
             type Output = Self;
 
+            #[inline]
             fn bitand(self, rhs: Self) -> Self::Output {
                 $mask(self.0 & rhs.0)
             }
         }
 
         impl BitAndAssign for $mask {
+            #[inline]
             fn bitand_assign(&mut self, rhs: Self) {
                 self.0 &= rhs.0;
             }
@@ -46,12 +50,14 @@ macro_rules! mask_type {
         impl BitOr for $mask {
             type Output = Self;
 
+            #[inline]
             fn bitor(self, rhs: Self) -> Self::Output {
                 $mask(self.0 | rhs.0)
             }
         }
 
         impl BitOrAssign for $mask {
+            #[inline]
             fn bitor_assign(&mut self, rhs: Self) {
                 self.0 |= rhs.0;
             }
@@ -60,12 +66,14 @@ macro_rules! mask_type {
         impl BitXor for $mask {
             type Output = Self;
 
+            #[inline]
             fn bitxor(self, rhs: Self) -> Self::Output {
                 $mask(self.0 ^ rhs.0)
             }
         }
 
         impl BitXorAssign for $mask {
+            #[inline]
             fn bitxor_assign(&mut self, rhs: Self) {
                 self.0 ^= rhs.0;
             }
@@ -74,12 +82,14 @@ macro_rules! mask_type {
         impl Not for $mask {
             type Output = Self;
 
+            #[inline]
             fn not(self) -> Self::Output {
                 $mask(!self.0)
             }
         }
 
         impl Debug for $mask {
+            #[inline]
             fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
                 Debug::fmt(&bool::from(*self), fmt)
             }
