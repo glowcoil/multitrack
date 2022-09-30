@@ -32,15 +32,10 @@ impl Arch for ScalarImpl {
     type m32 = m32x1;
     type m64 = m64x1;
 
-    #[inline(always)]
+    #[inline]
     fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { invoke_scalar(task) }
+        task.run::<ScalarImpl>()
     }
-}
-
-#[inline(always)]
-unsafe fn invoke_scalar<T: Task>(task: T) -> T::Result {
-    task.run::<ScalarImpl>()
 }
 
 macro_rules! scalar_type {

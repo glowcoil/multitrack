@@ -39,14 +39,14 @@ impl Arch for Avx2Impl {
 
     #[inline(always)]
     fn invoke<T: Task>(task: T) -> T::Result {
-        unsafe { invoke_avx2(task) }
-    }
-}
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn inner<T: Task>(task: T) -> T::Result {
+            task.run::<Avx2Impl>()
+        }
 
-#[target_feature(enable = "avx2")]
-#[inline]
-unsafe fn invoke_avx2<T: Task>(task: T) -> T::Result {
-    task.run::<Avx2Impl>()
+        unsafe { inner(task) }
+    }
 }
 
 macro_rules! float_type {
@@ -65,9 +65,15 @@ macro_rules! float_type {
 
             const LANES: usize = $lanes;
 
-            #[inline]
+            #[inline(always)]
             fn new(elem: Self::Elem) -> Self {
-                unsafe { $float($set(elem)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(elem: $elem) -> $float {
+                    $float($set(elem))
+                }
+
+                unsafe { inner(elem) }
             }
 
             #[inline]
@@ -84,18 +90,28 @@ macro_rules! float_type {
                 }
             }
 
-            #[inline]
+            #[inline(always)]
             fn from_slice(slice: &[Self::Elem]) -> Self {
-                assert!(slice.len() == Self::LANES);
-                unsafe { $float($load(slice.as_ptr())) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(slice: &[<$float as Simd>::Elem]) -> $float {
+                    assert!(slice.len() == <$float as Simd>::LANES);
+                    $float($load(slice.as_ptr()))
+                }
+
+                unsafe { inner(slice) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-                assert!(slice.len() == Self::LANES);
-                unsafe {
-                    $store(slice.as_mut_ptr(), self.0);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(vec: &$float, slice: &mut [$elem]) {
+                    assert!(slice.len() == <$float as Simd>::LANES);
+                    $store(slice.as_mut_ptr(), vec.0);
                 }
+
+                unsafe { inner(self, slice) }
             }
 
             #[inline]
@@ -128,64 +144,100 @@ macro_rules! float_type {
         impl LanesEq for $float {
             type Output = $mask;
 
-            #[inline]
+            #[inline(always)]
             fn eq(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_EQ_OQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_EQ_OQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn ne(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_NEQ_UQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_NEQ_UQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
         }
 
         impl LanesOrd for $float {
-            #[inline]
+            #[inline(always)]
             fn lt(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_LT_OQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_LT_OQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn le(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_LE_OQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_LE_OQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn gt(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_GT_OQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_GT_OQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn ge(&self, other: &Self) -> Self::Output {
-                unsafe {
-                    let res = $cmp(self.0, other.0, _CMP_GE_OQ);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$float, rhs: &$float) -> $mask {
+                    let res = $cmp(lhs.0, rhs.0, _CMP_GE_OQ);
                     $mask($cast_to_int(res))
                 }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn max(self, other: Self) -> Self {
-                unsafe { $float($max(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($max(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn min(self, other: Self) -> Self {
-                unsafe { $float($min(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($min(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
         }
 
@@ -206,12 +258,16 @@ macro_rules! float_type {
         }
 
         impl Select<$float> for $mask {
-            #[inline]
+            #[inline(always)]
             fn select(self, if_true: $float, if_false: $float) -> $float {
-                unsafe {
-                    let mask = $cast_from_int(self.0);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(mask: $mask, if_true: $float, if_false: $float) -> $float {
+                    let mask = $cast_from_int(mask.0);
                     $float($blend(if_false.0, if_true.0, mask))
                 }
+
+                unsafe { inner(self, if_true, if_false) }
             }
         }
 
@@ -220,14 +276,20 @@ macro_rules! float_type {
         impl Add for $float {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn add(self, rhs: Self) -> Self {
-                unsafe { $float($add(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($add(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl AddAssign for $float {
-            #[inline]
+            #[inline(always)]
             fn add_assign(&mut self, rhs: Self) {
                 *self = *self + rhs;
             }
@@ -236,14 +298,20 @@ macro_rules! float_type {
         impl Sub for $float {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn sub(self, rhs: Self) -> Self {
-                unsafe { $float($sub(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($sub(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl SubAssign for $float {
-            #[inline]
+            #[inline(always)]
             fn sub_assign(&mut self, rhs: Self) {
                 *self = *self - rhs;
             }
@@ -252,14 +320,20 @@ macro_rules! float_type {
         impl Mul for $float {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, rhs: Self) -> Self {
-                unsafe { $float($mul(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($mul(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl MulAssign for $float {
-            #[inline]
+            #[inline(always)]
             fn mul_assign(&mut self, rhs: Self) {
                 *self = *self * rhs;
             }
@@ -268,14 +342,20 @@ macro_rules! float_type {
         impl Div for $float {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn div(self, rhs: Self) -> Self {
-                unsafe { $float($div(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $float, rhs: $float) -> $float {
+                    $float($div(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl DivAssign for $float {
-            #[inline]
+            #[inline(always)]
             fn div_assign(&mut self, rhs: Self) {
                 *self = *self / rhs;
             }
@@ -284,9 +364,15 @@ macro_rules! float_type {
         impl Neg for $float {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn neg(self) -> Self {
-                unsafe { $float($xor(self.0, $set(-0.0))) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(vec: $float) -> $float {
+                    $float($xor(vec.0, $set(-0.0)))
+                }
+
+                unsafe { inner(self) }
             }
         }
     };
@@ -304,9 +390,15 @@ macro_rules! int_type {
 
             const LANES: usize = $lanes;
 
-            #[inline]
+            #[inline(always)]
             fn new(elem: Self::Elem) -> Self {
-                unsafe { $int($set(mem::transmute(elem))) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(elem: $elem) -> $int {
+                    $int($set(mem::transmute(elem)))
+                }
+
+                unsafe { inner(elem) }
             }
 
             #[inline]
@@ -323,17 +415,29 @@ macro_rules! int_type {
                 }
             }
 
-            #[inline]
+            #[inline(always)]
             fn from_slice(slice: &[Self::Elem]) -> Self {
-                assert!(slice.len() == Self::LANES);
-                unsafe { $int(_mm256_loadu_si256(slice.as_ptr() as *const __m256i)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(slice: &[$elem]) -> $int {
+                    assert!(slice.len() == <$int as Simd>::LANES);
+                    $int(_mm256_loadu_si256(slice.as_ptr() as *const __m256i))
+                }
+
+                unsafe { inner(slice) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-                assert!(slice.len() == Self::LANES);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(vec: &$int, slice: &mut [$elem]) {
+                    assert!(slice.len() == <$int as Simd>::LANES);
+                    _mm256_storeu_si256(slice.as_mut_ptr() as *mut __m256i, vec.0);
+                }
+
                 unsafe {
-                    _mm256_storeu_si256(slice.as_mut_ptr() as *mut __m256i, self.0);
+                    inner(self, slice);
                 }
             }
 
@@ -367,9 +471,15 @@ macro_rules! int_type {
         impl LanesEq for $int {
             type Output = $mask;
 
-            #[inline]
+            #[inline(always)]
             fn eq(&self, other: &Self) -> Self::Output {
-                unsafe { $mask($cmp(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$int, rhs: &$int) -> $mask {
+                    $mask($cmp(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
         }
 
@@ -394,14 +504,20 @@ macro_rules! int_type {
         impl BitAnd for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn bitand(self, rhs: Self) -> Self::Output {
-                unsafe { $int(_mm256_and_si256(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int(_mm256_and_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl BitAndAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn bitand_assign(&mut self, rhs: Self) {
                 *self = *self & rhs;
             }
@@ -410,14 +526,20 @@ macro_rules! int_type {
         impl BitOr for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn bitor(self, rhs: Self) -> Self::Output {
-                unsafe { $int(_mm256_or_si256(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int(_mm256_or_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl BitOrAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn bitor_assign(&mut self, rhs: Self) {
                 *self = *self | rhs;
             }
@@ -426,14 +548,20 @@ macro_rules! int_type {
         impl BitXor for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn bitxor(self, rhs: Self) -> Self::Output {
-                unsafe { $int(_mm256_xor_si256(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int(_mm256_xor_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl BitXorAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn bitxor_assign(&mut self, rhs: Self) {
                 *self = *self ^ rhs;
             }
@@ -442,19 +570,29 @@ macro_rules! int_type {
         impl Not for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn not(self) -> Self::Output {
-                unsafe {
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(vec: $int) -> $int {
                     let zero = _mm256_setzero_si256();
-                    $int(_mm256_andnot_si256(self.0, _mm256_cmpeq_epi8(zero, zero)))
+                    $int(_mm256_andnot_si256(vec.0, _mm256_cmpeq_epi8(zero, zero)))
                 }
+
+                unsafe { inner(self) }
             }
         }
 
         impl Select<$int> for $mask {
-            #[inline]
+            #[inline(always)]
             fn select(self, if_true: $int, if_false: $int) -> $int {
-                unsafe { $int(_mm256_blendv_epi8(if_false.0, if_true.0, self.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(mask: $mask, if_true: $int, if_false: $int) -> $int {
+                    $int(_mm256_blendv_epi8(if_false.0, if_true.0, mask.0))
+                }
+
+                unsafe { inner(self, if_true, if_false) }
             }
         }
     };
@@ -463,24 +601,42 @@ macro_rules! int_type {
 macro_rules! impl_ord_uint {
     ($uint:ident, $mask:ident, $cmpeq:ident, $max:ident, $min:ident) => {
         impl LanesOrd for $uint {
-            #[inline]
+            #[inline(always)]
             fn lt(&self, other: &Self) -> Self::Output {
                 !other.le(self)
             }
 
-            #[inline]
+            #[inline(always)]
             fn le(&self, other: &Self) -> Self::Output {
-                unsafe { $mask($cmpeq(self.0, $min(self.0, other.0))) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$uint, rhs: &$uint) -> $mask {
+                    $mask($cmpeq(lhs.0, $min(lhs.0, rhs.0)))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn max(self, other: Self) -> Self {
-                unsafe { $uint($max(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $uint, rhs: $uint) -> $uint {
+                    $uint($max(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn min(self, other: Self) -> Self {
-                unsafe { $uint($min(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $uint, rhs: $uint) -> $uint {
+                    $uint($min(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
         }
     };
@@ -489,19 +645,37 @@ macro_rules! impl_ord_uint {
 macro_rules! impl_ord_int {
     ($int:ident, $mask:ident, $cmpgt:ident, $max:ident, $min:ident) => {
         impl LanesOrd for $int {
-            #[inline]
+            #[inline(always)]
             fn lt(&self, other: &Self) -> Self::Output {
-                unsafe { $mask($cmpgt(other.0, self.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$int, rhs: &$int) -> $mask {
+                    $mask($cmpgt(rhs.0, lhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn max(self, other: Self) -> Self {
-                unsafe { $int($max(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int($max(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn min(self, other: Self) -> Self {
-                unsafe { $int($min(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int($min(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
         }
     };
@@ -510,24 +684,48 @@ macro_rules! impl_ord_int {
 macro_rules! impl_ord_mask {
     ($mask:ident) => {
         impl LanesOrd for $mask {
-            #[inline]
+            #[inline(always)]
             fn lt(&self, other: &Self) -> Self::Output {
-                unsafe { $mask(_mm256_andnot_si256(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$mask, rhs: &$mask) -> $mask {
+                    $mask(_mm256_andnot_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn le(&self, other: &Self) -> Self::Output {
-                unsafe { $mask(_mm256_or_si256(other.0, _mm256_cmpeq_epi8(self.0, other.0))) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: &$mask, rhs: &$mask) -> $mask {
+                    $mask(_mm256_or_si256(rhs.0, _mm256_cmpeq_epi8(lhs.0, rhs.0)))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn max(self, other: Self) -> Self {
-                unsafe { $mask(_mm256_or_si256(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $mask, rhs: $mask) -> $mask {
+                    $mask(_mm256_or_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
 
-            #[inline]
+            #[inline(always)]
             fn min(self, other: Self) -> Self {
-                unsafe { $mask(_mm256_and_si256(self.0, other.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $mask, rhs: $mask) -> $mask {
+                    $mask(_mm256_and_si256(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, other) }
             }
         }
     };
@@ -540,14 +738,20 @@ macro_rules! impl_int {
         impl Add for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn add(self, rhs: Self) -> Self {
-                unsafe { $int($add(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int($add(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl AddAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn add_assign(&mut self, rhs: Self) {
                 *self = *self + rhs;
             }
@@ -556,21 +760,27 @@ macro_rules! impl_int {
         impl Sub for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn sub(self, rhs: Self) -> Self {
-                unsafe { $int($sub(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: $int) -> $int {
+                    $int($sub(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl SubAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn sub_assign(&mut self, rhs: Self) {
                 *self = *self - rhs;
             }
         }
 
         impl MulAssign for $int {
-            #[inline]
+            #[inline(always)]
             fn mul_assign(&mut self, rhs: Self) {
                 *self = *self * rhs;
             }
@@ -579,9 +789,15 @@ macro_rules! impl_int {
         impl Neg for $int {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn neg(self) -> Self {
-                unsafe { $int($sub($set(0), self.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(vec: $int) -> $int {
+                    $int($sub($set(0), vec.0))
+                }
+
+                unsafe { inner(self) }
             }
         }
     };
@@ -592,49 +808,69 @@ macro_rules! impl_int_mul {
         impl Mul for $int8 {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, rhs: Self) -> Self {
-                unsafe {
-                    let lhs_odd = _mm256_srli_epi16(self.0, 8);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int8, rhs: $int8) -> $int8 {
+                    let lhs_odd = _mm256_srli_epi16(lhs.0, 8);
                     let rhs_odd = _mm256_srli_epi16(rhs.0, 8);
-                    let even = _mm256_mullo_epi16(self.0, rhs.0);
+                    let even = _mm256_mullo_epi16(lhs.0, rhs.0);
                     let odd = _mm256_slli_epi16(_mm256_mullo_epi16(lhs_odd, rhs_odd), 8);
                     let mask = _mm256_set1_epi32(0xFF00FF00u32 as i32);
                     $int8(_mm256_blendv_epi8(even, odd, mask))
                 }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl Mul for $int16 {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, rhs: Self) -> Self {
-                unsafe { $int16(_mm256_mullo_epi16(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int16, rhs: $int16) -> $int16 {
+                    $int16(_mm256_mullo_epi16(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl Mul for $int32 {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, rhs: Self) -> Self {
-                unsafe { $int32(_mm256_mullo_epi32(self.0, rhs.0)) }
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int32, rhs: $int32) -> $int32 {
+                    $int32(_mm256_mullo_epi32(lhs.0, rhs.0))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
         impl Mul for $int64 {
             type Output = Self;
 
-            #[inline]
+            #[inline(always)]
             fn mul(self, rhs: Self) -> Self {
-                unsafe {
-                    let low_high = _mm256_mullo_epi32(self.0, _mm256_slli_epi64(rhs.0, 32));
-                    let high_low = _mm256_mullo_epi32(rhs.0, _mm256_slli_epi64(self.0, 32));
-                    let low_low = _mm256_mul_epu32(self.0, rhs.0);
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int64, rhs: $int64) -> $int64 {
+                    let low_high = _mm256_mullo_epi32(lhs.0, _mm256_slli_epi64(rhs.0, 32));
+                    let high_low = _mm256_mullo_epi32(rhs.0, _mm256_slli_epi64(lhs.0, 32));
+                    let low_low = _mm256_mul_epu32(lhs.0, rhs.0);
                     let high = _mm256_add_epi32(low_high, high_low);
                     $int64(_mm256_add_epi32(low_low, high))
                 }
+
+                unsafe { inner(self, rhs) }
             }
         }
     };
@@ -670,15 +906,19 @@ impl_int_mul! { u8x32, u16x16, u32x8, u64x4 }
 // we have to use a biased signed comparison (and then fall back to the default impls of min/max in
 // terms of le and select).
 impl LanesOrd for u64x4 {
-    #[inline]
+    #[inline(always)]
     fn lt(&self, other: &Self) -> Self::Output {
-        unsafe {
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn inner(lhs: &u64x4, rhs: &u64x4) -> m64x4 {
             let bias = _mm256_set1_epi64x(i64::MIN);
             m64x4(_mm256_cmpgt_epi64(
-                _mm256_add_epi32(other.0, bias),
-                _mm256_add_epi32(self.0, bias),
+                _mm256_add_epi32(rhs.0, bias),
+                _mm256_add_epi32(lhs.0, bias),
             ))
         }
+
+        unsafe { inner(self, other) }
     }
 }
 
@@ -698,9 +938,15 @@ impl_int_mul! { i8x32, i16x16, i32x8, i64x4 }
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall
 // back to the default impls of min and max in terms of le and select.
 impl LanesOrd for i64x4 {
-    #[inline]
+    #[inline(always)]
     fn lt(&self, other: &Self) -> Self::Output {
-        unsafe { m64x4(_mm256_cmpgt_epi64(other.0, self.0)) }
+        #[inline]
+        #[target_feature(enable = "avx2")]
+        unsafe fn inner(lhs: &i64x4, rhs: &i64x4) -> m64x4 {
+            m64x4(_mm256_cmpgt_epi64(rhs.0, lhs.0))
+        }
+
+        unsafe { inner(self, other) }
     }
 }
 

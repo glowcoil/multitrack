@@ -58,6 +58,7 @@ pub trait LanesEq<Rhs = Self>: Sized {
 
     fn eq(&self, other: &Self) -> Self::Output;
 
+    #[inline(always)]
     fn ne(&self, other: &Self) -> Self::Output {
         !self.eq(other)
     }
@@ -66,26 +67,32 @@ pub trait LanesEq<Rhs = Self>: Sized {
 pub trait LanesOrd<Rhs = Self>: LanesEq<Rhs> {
     fn lt(&self, other: &Self) -> Self::Output;
 
+    #[inline(always)]
     fn le(&self, other: &Self) -> Self::Output {
         self.lt(other) | self.eq(other)
     }
 
+    #[inline(always)]
     fn gt(&self, other: &Self) -> Self::Output {
         other.lt(self)
     }
 
+    #[inline(always)]
     fn ge(&self, other: &Self) -> Self::Output {
         other.le(self)
     }
 
+    #[inline(always)]
     fn max(self, other: Self) -> Self {
         other.lt(&self).select(self, other)
     }
 
+    #[inline(always)]
     fn min(self, other: Self) -> Self {
         self.lt(&other).select(self, other)
     }
 
+    #[inline(always)]
     fn clamp(self, min: Self, max: Self) -> Self {
         self.max(min).min(max)
     }
