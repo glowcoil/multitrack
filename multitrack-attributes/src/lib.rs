@@ -15,34 +15,34 @@ pub fn specialize(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let block = &func.block;
 
     let mut arch_ident = None;
-    'arch: for param in &sig.generics.params {
-        if let GenericParam::Type(ty) = param {
-            for bound in &ty.bounds {
-                if let TypeParamBound::Trait(tr) = bound {
-                    if let Some(last) = tr.path.segments.last() {
-                        if last.ident.to_string() == "Arch" {
-                            arch_ident = Some(&ty.ident);
-                            break 'arch;
+
+    let mut generic_idents = Vec::new();
+    let mut generic_params_no_arch = Vec::new();
+    let mut generic_idents_no_arch = Vec::new();
+    for param in &sig.generics.params {
+        match param {
+            GenericParam::Type(ty) => {
+                // Look for <_: Arch> generic parameter
+                let mut found_arch = false;
+                if arch_ident.is_none() {
+                    for bound in &ty.bounds {
+                        if let TypeParamBound::Trait(tr) = bound {
+                            if let Some(last) = tr.path.segments.last() {
+                                if last.ident.to_string() == "Arch" {
+                                    arch_ident = Some(&ty.ident);
+                                    found_arch = true;
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-    }
-    if arch_ident.is_none() {
-        return Error::new(func.sig.generics.span(), "could not find Arch parameter")
-            .into_compile_error()
-            .into();
-    }
-    let arch_ident = arch_ident.unwrap();
 
-    let mut generic_params = Vec::new();
-    let mut generic_idents = Vec::new();
-    for param in &sig.generics.params {
-        generic_params.push(param);
-        match param {
-            GenericParam::Type(ty) => {
                 generic_idents.push(&ty.ident);
+
+                if !found_arch {
+                    generic_params_no_arch.push(param);
+                    generic_idents_no_arch.push(&ty.ident);
+                }
             }
             GenericParam::Const(_) => {
                 return Error::new(func.sig.generics.span(), "const generics not supported")
@@ -52,6 +52,13 @@ pub fn specialize(_attr: TokenStream, input: TokenStream) -> TokenStream {
             GenericParam::Lifetime(_) => {}
         };
     }
+
+    if arch_ident.is_none() {
+        return Error::new(func.sig.generics.span(), "could not find Arch parameter")
+            .into_compile_error()
+            .into();
+    }
+    let arch_ident = arch_ident.unwrap();
 
     let mut inner_sig = sig.clone();
     inner_sig.ident = format_ident!("__inner");
@@ -84,20 +91,20 @@ pub fn specialize(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let result = quote! {
         #(#attrs)*
         #vis #sig {
-            struct __Task<#(#generic_idents,)* F, #(#arg_types,)*> {
+            struct __Task<#(#generic_idents_no_arch,)* F, #(#arg_types,)*> {
                 #(#arg_fields: ::core::mem::ManuallyDrop<#arg_types>,)*
                 _f: F,
-                _phantom: ::core::marker::PhantomData<(#(#generic_idents,)*)>,
+                _phantom: ::core::marker::PhantomData<(#(#generic_idents_no_arch,)*)>,
             }
 
-            impl<#(#generic_params,)* F, #(#arg_types,)* O> ::multitrack::Task for __Task<#(#generic_idents,)* F, #(#arg_types),*>
+            impl<#(#generic_params_no_arch,)* F, #(#arg_types,)* O> ::multitrack::Task for __Task<#(#generic_idents_no_arch,)* F, #(#arg_types),*>
             where
                 F: Fn(#(#arg_types),*) -> O,
             {
                 type Result = O;
 
                 #[inline(always)]
-                fn run<__A: Arch>(self) -> O {
+                fn run<#arch_ident: Arch>(self) -> O {
                     use ::core::mem::{ManuallyDrop, transmute_copy};
 
                     unsafe {
@@ -115,7 +122,7 @@ pub fn specialize(_attr: TokenStream, input: TokenStream) -> TokenStream {
             #arch_ident::invoke(__Task {
                 #(#arg_fields: ::core::mem::ManuallyDrop::new(#arg_names),)*
                 _f: __inner::<#(#generic_idents,)*>,
-                _phantom: ::core::marker::PhantomData::<(#(#generic_idents,)*)>,
+                _phantom: ::core::marker::PhantomData::<(#(#generic_idents_no_arch,)*)>,
             })
         }
     };
