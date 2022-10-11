@@ -1,3 +1,5 @@
+extern crate self as multitrack;
+
 pub mod arch;
 pub mod mask;
 pub mod simd;
