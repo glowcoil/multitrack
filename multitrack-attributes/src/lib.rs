@@ -188,7 +188,7 @@ impl<'a> FnInfo<'a> {
             #vis #sig {
                 #task
 
-                #arch_ident::invoke(__Task {
+                <#arch_ident as ::multitrack::Arch>::invoke(__Task {
                     #(#arg_fields: ::core::mem::ManuallyDrop::new(#arg_idents),)*
                     _f: __inner::<#(#generic_idents,)*>,
                     _phantom: ::core::marker::PhantomData::<(#(#generic_idents_no_arch,)*)>,
@@ -234,7 +234,7 @@ impl<'a> FnInfo<'a> {
                 type Result = O;
 
                 #[inline(always)]
-                fn run<#arch_ident: Arch>(self) -> O {
+                fn run<#arch_ident: ::multitrack::Arch>(self) -> O {
                     use ::core::mem::{ManuallyDrop, transmute_copy};
 
                     unsafe {
