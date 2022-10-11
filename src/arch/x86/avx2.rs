@@ -37,6 +37,8 @@ impl Arch for Avx2Impl {
     type m32 = m32x8;
     type m64 = m64x4;
 
+    const NAME: &'static str = "avx2";
+
     #[inline(always)]
     fn invoke<T: Task>(task: T) -> T::Result {
         #[inline]

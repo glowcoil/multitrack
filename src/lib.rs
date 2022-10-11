@@ -32,6 +32,8 @@ where
     type m32: Simd<Elem = m32, Mask = Self::m32> + Bitwise;
     type m64: Simd<Elem = m64, Mask = Self::m64> + Bitwise;
 
+    const NAME: &'static str;
+
     fn invoke<T: Task>(task: T) -> T::Result;
 }
 

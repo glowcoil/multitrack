@@ -38,6 +38,8 @@ impl Arch for Sse2Impl {
     type m32 = m32x4;
     type m64 = m64x2;
 
+    const NAME: &'static str = "sse2";
+
     #[inline(always)]
     fn invoke<T: Task>(task: T) -> T::Result {
         #[inline]

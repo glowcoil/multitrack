@@ -32,6 +32,8 @@ impl Arch for ScalarImpl {
     type m32 = m32x1;
     type m64 = m64x1;
 
+    const NAME: &'static str = "scalar";
+
     #[inline]
     fn invoke<T: Task>(task: T) -> T::Result {
         task.run::<ScalarImpl>()
