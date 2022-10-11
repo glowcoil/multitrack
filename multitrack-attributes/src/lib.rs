@@ -205,6 +205,13 @@ impl<'a> FnInfo<'a> {
         let arg_fields = &self.arg_fields;
         let arch_ident = &self.arch_ident;
 
+        let where_clause = &self.func.sig.generics.where_clause;
+        let predicates = where_clause
+            .as_ref()
+            .map(|w| w.predicates.iter())
+            .into_iter()
+            .flatten();
+
         let mut inner_sig = self.func.sig.clone();
         inner_sig.ident = format_ident!("__inner");
 
@@ -220,6 +227,9 @@ impl<'a> FnInfo<'a> {
             impl<#(#generic_params_no_arch,)* F, #(#arg_types,)* O> ::multitrack::Task for __Task<#(#generic_idents_no_arch,)* F, #(#arg_types),*>
             where
                 F: Fn(#(#arg_types),*) -> O,
+                #(
+                    #predicates,
+                )*
             {
                 type Result = O;
 
