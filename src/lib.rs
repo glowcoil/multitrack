@@ -2,7 +2,7 @@ pub mod arch;
 pub mod mask;
 pub mod simd;
 
-pub use multitrack_attributes::specialize;
+pub use multitrack_attributes::{dispatch, specialize};
 
 use {mask::*, simd::*};
 

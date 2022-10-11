@@ -2,19 +2,41 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, spanned::Spanned, Error, FnArg, GenericParam, Ident, ItemFn, Pat,
-    TypeParamBound,
+    parse_macro_input, punctuated::Punctuated, spanned::Spanned, Error, FnArg, GenericParam, Ident,
+    ItemFn, Pat, Path, Token, TypeParamBound,
 };
+
+struct DispatchOpts<'a> {
+    archs: Vec<&'a Path>,
+}
+
+impl<'a> DispatchOpts<'a> {
+    fn from_args(args: &Punctuated<Path, Token![,]>) -> Result<DispatchOpts, Error> {
+        if args.empty_or_trailing() {
+            return Err(Error::new(
+                args.span(),
+                "expected at least one architecture",
+            ));
+        }
+
+        let mut archs = Vec::with_capacity(args.len());
+        for arg in args {
+            archs.push(arg);
+        }
+
+        Ok(DispatchOpts { archs })
+    }
+}
 
 struct FnInfo<'a> {
     func: &'a ItemFn,
+    arch_ident: &'a Ident,
     generic_idents: Vec<&'a Ident>,
     generic_params_no_arch: Vec<&'a GenericParam>,
     generic_idents_no_arch: Vec<&'a Ident>,
     arg_idents: Vec<&'a Ident>,
     arg_types: Vec<Ident>,
     arg_fields: Vec<Ident>,
-    arch_ident: &'a Ident,
 }
 
 impl<'a> FnInfo<'a> {
@@ -102,20 +124,75 @@ impl<'a> FnInfo<'a> {
         })
     }
 
-    fn specialize(&self) -> TokenStream2 {
+    fn dispatch(&self, opts: &DispatchOpts) -> TokenStream2 {
         let attrs = &self.func.attrs;
         let vis = &self.func.vis;
-        let sig = &self.func.sig;
+        let generic_idents_no_arch = &self.generic_idents_no_arch;
+        let arg_idents = &self.arg_idents;
+        let arg_fields = &self.arg_fields;
+
+        let mut sig = self.func.sig.clone();
+        sig.generics.params = self
+            .generic_params_no_arch
+            .iter()
+            .map(|p| (*p).clone())
+            .collect::<Punctuated<_, Token![,]>>();
 
         let task = self.task();
-        let invoke = self.invoke();
+
+        let (supported, possible) = opts.archs.split_last().unwrap();
+        let mut proto_sig = sig.clone();
+        proto_sig.ident = format_ident!("__proto");
 
         quote! {
             #(#attrs)*
             #vis #sig {
                 #task
 
-                #invoke
+                #[allow(unused_variables)]
+                #proto_sig {
+                    core::unimplemented!()
+                }
+
+                let task = __Task {
+                    #(#arg_fields: ::core::mem::ManuallyDrop::new(#arg_idents),)*
+                    _f: __proto::<#(#generic_idents_no_arch,)*>,
+                    _phantom: ::core::marker::PhantomData::<(#(#generic_idents_no_arch,)*)>,
+                };
+
+                #(
+                    if <#possible as ::multitrack::Possible>::supported() {
+                        return unsafe { <#possible as ::multitrack::Possible>::invoke_unchecked(task) };
+                    }
+                )*
+
+                <#supported as ::multitrack::Supported>::invoke(task)
+            }
+        }
+    }
+
+    fn specialize(&self) -> TokenStream2 {
+        let attrs = &self.func.attrs;
+        let vis = &self.func.vis;
+        let sig = &self.func.sig;
+        let arch_ident = self.arch_ident;
+        let generic_idents = &self.generic_idents;
+        let generic_idents_no_arch = &self.generic_idents_no_arch;
+        let arg_idents = &self.arg_idents;
+        let arg_fields = &self.arg_fields;
+
+        let task = self.task();
+
+        quote! {
+            #(#attrs)*
+            #vis #sig {
+                #task
+
+                #arch_ident::invoke(__Task {
+                    #(#arg_fields: ::core::mem::ManuallyDrop::new(#arg_idents),)*
+                    _f: __inner::<#(#generic_idents,)*>,
+                    _phantom: ::core::marker::PhantomData::<(#(#generic_idents_no_arch,)*)>,
+                })
             }
         }
     }
@@ -163,22 +240,23 @@ impl<'a> FnInfo<'a> {
             #inner_sig #block
         }
     }
+}
 
-    fn invoke(&self) -> TokenStream2 {
-        let generic_idents = &self.generic_idents;
-        let generic_idents_no_arch = &self.generic_idents_no_arch;
-        let arch_ident = &self.arch_ident;
-        let arg_idents = &self.arg_idents;
-        let arg_fields = &self.arg_fields;
+#[proc_macro_attribute]
+pub fn dispatch(attr: TokenStream, input: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(attr with Punctuated::parse_terminated);
+    let opts = match DispatchOpts::from_args(&args) {
+        Ok(opts) => opts,
+        Err(err) => return err.into_compile_error().into(),
+    };
 
-        quote! {
-            #arch_ident::invoke(__Task {
-                #(#arg_fields: ::core::mem::ManuallyDrop::new(#arg_idents),)*
-                _f: __inner::<#(#generic_idents,)*>,
-                _phantom: ::core::marker::PhantomData::<(#(#generic_idents_no_arch,)*)>,
-            })
-        }
-    }
+    let func = parse_macro_input!(input as ItemFn);
+    let info = match FnInfo::from_fn(&func) {
+        Ok(info) => info,
+        Err(err) => return err.into_compile_error().into(),
+    };
+
+    info.dispatch(&opts).into()
 }
 
 #[proc_macro_attribute]
