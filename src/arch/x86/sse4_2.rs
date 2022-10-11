@@ -43,7 +43,7 @@ impl Arch for Sse4_2Impl {
     #[inline(always)]
     fn invoke<T: Task>(task: T) -> T::Result {
         #[inline]
-        #[target_feature(enable = "sse4.1")]
+        #[target_feature(enable = "sse4.2")]
         unsafe fn inner<T: Task>(task: T) -> T::Result {
             task.run::<Sse4_2Impl>()
         }
