@@ -5,6 +5,7 @@ use core::num::Wrapping;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
+use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use core::slice;
 
 use crate::mask::*;
@@ -401,6 +402,38 @@ macro_rules! impl_int {
             #[inline]
             fn neg(self) -> Self {
                 $int(-self.0)
+            }
+        }
+
+        impl Shl<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shl(self, rhs: usize) -> Self {
+                $int(self.0 << rhs)
+            }
+        }
+
+        impl ShlAssign<usize> for $int {
+            #[inline]
+            fn shl_assign(&mut self, rhs: usize) {
+                self.0 <<= rhs;
+            }
+        }
+
+        impl Shr<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shr(self, rhs: usize) -> Self {
+                $int(self.0 >> rhs)
+            }
+        }
+
+        impl ShrAssign<usize> for $int {
+            #[inline]
+            fn shr_assign(&mut self, rhs: usize) {
+                self.0 >>= rhs;
             }
         }
     };

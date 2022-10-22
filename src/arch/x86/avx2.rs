@@ -5,6 +5,7 @@ use core::mem;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
+use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use core::slice;
 
 #[cfg(target_arch = "x86")]
@@ -800,6 +801,38 @@ macro_rules! impl_int {
                 }
 
                 unsafe { inner(self) }
+            }
+        }
+
+        impl Shl<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shl(self, _rhs: usize) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl ShlAssign<usize> for $int {
+            #[inline]
+            fn shl_assign(&mut self, rhs: usize) {
+                *self = *self << rhs;
+            }
+        }
+
+        impl Shr<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shr(self, _rhs: usize) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl ShrAssign<usize> for $int {
+            #[inline]
+            fn shr_assign(&mut self, rhs: usize) {
+                *self = *self >> rhs;
             }
         }
     };

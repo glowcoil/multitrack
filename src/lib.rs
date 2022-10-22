@@ -102,7 +102,8 @@ pub unsafe trait Supported: Possible {
 #[cfg(test)]
 mod tests {
     use core::fmt::Debug;
-    use core::ops::{Add, Div, Mul, Neg, Sub};
+    use core::mem;
+    use core::ops::{Add, Div, Mul, Neg, Shl, Shr, Sub};
     use core::ops::{BitAnd, BitOr, BitXor, Not};
 
     use crate::{arch::*, mask::*, simd::*, Arch, Possible, Supported, Task};
@@ -113,6 +114,7 @@ mod tests {
         eq: fn(&S::Elem, &S::Elem) -> bool,
         unary_ops: &[(fn(S) -> S, fn(S::Elem) -> S::Elem, &str)],
         binary_ops: &[(fn(S, S) -> S, fn(S::Elem, S::Elem) -> S::Elem, &str)],
+        shift_ops: &[(fn(S, usize) -> S, fn(S::Elem, usize) -> S::Elem, &str)],
         cmp_ops: &[(
             fn(&S, &S) -> S::Mask,
             fn(&S::Elem, &S::Elem) -> <S::Mask as Simd>::Elem,
@@ -149,10 +151,10 @@ mod tests {
         }
 
         for x in values {
-            for y in values.chunks(S::LANES) {
+            for ys in values.chunks(S::LANES) {
                 for (vector, scalar, op) in binary_ops {
-                    let res = vector(S::new(*x), S::from_slice(y));
-                    for (y, out) in y.iter().zip(res.as_slice().iter()) {
+                    let res = vector(S::new(*x), S::from_slice(ys));
+                    for (y, out) in ys.iter().zip(res.as_slice().iter()) {
                         let scalar = scalar(*x, *y);
                         assert!(
                             eq(&scalar, out),
@@ -162,14 +164,14 @@ mod tests {
                             *x,
                             *y,
                             scalar,
-                            *out
+                            *out,
                         );
                     }
                 }
 
                 for (vector, scalar, op) in cmp_ops {
-                    let res = vector(&S::new(*x), &S::from_slice(y));
-                    for (y, out) in y.iter().zip(res.as_slice().iter()) {
+                    let res = vector(&S::new(*x), &S::from_slice(ys));
+                    for (y, out) in ys.iter().zip(res.as_slice().iter()) {
                         let scalar = scalar(x, y);
                         assert!(
                             &scalar == out,
@@ -179,14 +181,14 @@ mod tests {
                             *x,
                             *y,
                             scalar,
-                            *out
+                            *out,
                         );
                     }
                 }
 
                 for m in mask_values.chunks(S::LANES) {
-                    let res = S::Mask::from_slice(m).select(S::new(*x), S::from_slice(y));
-                    for ((m, y), out) in m.iter().zip(y.iter()).zip(res.as_slice().iter()) {
+                    let res = S::Mask::from_slice(m).select(S::new(*x), S::from_slice(ys));
+                    for ((m, y), out) in m.iter().zip(ys.iter()).zip(res.as_slice().iter()) {
                         let scalar = if *m == true.into() { *x } else { *y };
                         assert!(
                             eq(&scalar, out),
@@ -196,7 +198,28 @@ mod tests {
                             *x,
                             *y,
                             scalar,
-                            *out
+                            *out,
+                        );
+                    }
+                }
+            }
+        }
+
+        for xs in values.chunks(S::LANES) {
+            for (vector, scalar, op) in shift_ops {
+                for shift in 0..(mem::size_of::<S::Elem>() * mem::size_of::<u8>()) {
+                    let res = vector(S::from_slice(xs), shift);
+                    for (x, out) in xs.iter().zip(res.as_slice().iter()) {
+                        let scalar = scalar(*x, shift);
+                        assert!(
+                            eq(&scalar, out),
+                            "expected {}::{}({:?}, {:?}) == {:?}, got {:?}",
+                            type_,
+                            op,
+                            *x,
+                            shift,
+                            scalar,
+                            *out,
                         );
                     }
                 }
@@ -253,6 +276,7 @@ mod tests {
                     (A::$type::max, max, "max"),
                     (A::$type::min, min, "min"),
                 ],
+                &[],
                 &[
                     (A::$type::eq, |x, y| (x == y).into(), "eq"),
                     (A::$type::ne, |x, y| (x != y).into(), "ne"),
@@ -291,6 +315,10 @@ mod tests {
                     (A::$type::min, $type::min, "min"),
                 ],
                 &[
+                    (A::$type::shl, $type::shl, "shl"),
+                    (A::$type::shr, $type::shr, "shr"),
+                ],
+                &[
                     (A::$type::eq, |x, y| (x == y).into(), "eq"),
                     (A::$type::ne, |x, y| (x != y).into(), "ne"),
                     (A::$type::lt, |x, y| (x < y).into(), "lt"),
@@ -322,6 +350,7 @@ mod tests {
                     (A::$type::max, $type::max, "max"),
                     (A::$type::min, $type::min, "min"),
                 ],
+                &[],
                 &[
                     (A::$type::eq, |x, y| (x == y).into(), "eq"),
                     (A::$type::ne, |x, y| (x != y).into(), "ne"),

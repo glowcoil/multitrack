@@ -2,6 +2,7 @@ use core::fmt::Debug;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 use core::ops::{Index, IndexMut};
+use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
 where
@@ -41,6 +42,8 @@ where
     Self: Sub<Output = Self> + SubAssign,
     Self: Mul<Output = Self> + MulAssign,
     Self: Neg<Output = Self>,
+    Self: Shl<usize, Output = Self> + ShlAssign<usize>,
+    Self: Shr<usize, Output = Self> + ShrAssign<usize>,
 {
 }
 

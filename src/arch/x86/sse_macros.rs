@@ -676,6 +676,38 @@ macro_rules! impl_int {
                 unsafe { inner(self) }
             }
         }
+
+        impl Shl<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shl(self, _rhs: usize) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl ShlAssign<usize> for $int {
+            #[inline]
+            fn shl_assign(&mut self, rhs: usize) {
+                *self = *self << rhs;
+            }
+        }
+
+        impl Shr<usize> for $int {
+            type Output = Self;
+
+            #[inline]
+            fn shr(self, _rhs: usize) -> Self {
+                unimplemented!()
+            }
+        }
+
+        impl ShrAssign<usize> for $int {
+            #[inline]
+            fn shr_assign(&mut self, rhs: usize) {
+                *self = *self >> rhs;
+            }
+        }
     };
 }
 pub(super) use impl_int;
