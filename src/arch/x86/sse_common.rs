@@ -751,6 +751,8 @@ pub unsafe fn _mm_sra_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
 
 #[inline]
 #[target_feature(enable = "sse2")]
-pub unsafe fn _mm_sra_epi64_fallback(_a: __m128i, _count: __m128i) -> __m128i {
-    unimplemented!()
+pub unsafe fn _mm_sra_epi64_fallback(a: __m128i, count: __m128i) -> __m128i {
+    let sign = _mm_and_si128(a, _mm_set1_epi64x(1 << 63));
+    let extended = _mm_sub_epi64(_mm_setzero_si128(), _mm_srl_epi64(sign, count));
+    _mm_or_si128(extended, _mm_srl_epi64(a, count))
 }

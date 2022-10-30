@@ -945,8 +945,10 @@ pub unsafe fn _mm256_sra_epi8_fallback(_a: __m256i, _count: __m128i) -> __m256i 
 
 #[inline]
 #[target_feature(enable = "avx2")]
-pub unsafe fn _mm256_sra_epi64_fallback(_a: __m256i, _count: __m128i) -> __m256i {
-    unimplemented!()
+pub unsafe fn _mm256_sra_epi64_fallback(a: __m256i, count: __m128i) -> __m256i {
+    let sign = _mm256_and_si256(a, _mm256_set1_epi64x(1 << 63));
+    let extended = _mm256_sub_epi64(_mm256_setzero_si256(), _mm256_srl_epi64(sign, count));
+    _mm256_or_si256(extended, _mm256_srl_epi64(a, count))
 }
 
 float_type! {
