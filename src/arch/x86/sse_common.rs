@@ -733,25 +733,39 @@ pub(super) use impl_int;
 
 #[inline]
 #[target_feature(enable = "sse2")]
-pub unsafe fn _mm_sll_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
-    unimplemented!()
+pub unsafe fn _mm_sll_epi8_fallback(a: __m128i, count: __m128i) -> __m128i {
+    // Perform a 16-bit shift and then mask out garbage from adjacent lanes
+    let shift = _mm_cvtsi128_si64(count);
+    let mask = _mm_set1_epi8((0xFFu8 << shift) as i8);
+    _mm_and_si128(mask, _mm_sll_epi16(a, count))
 }
 
 #[inline]
 #[target_feature(enable = "sse2")]
-pub unsafe fn _mm_srl_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
-    unimplemented!()
+pub unsafe fn _mm_srl_epi8_fallback(a: __m128i, count: __m128i) -> __m128i {
+    // Perform a 16-bit shift and then mask out garbage from adjacent lanes
+    let shift = _mm_cvtsi128_si64(count);
+    let mask = _mm_set1_epi8((0xFFu8 >> shift) as i8);
+    _mm_and_si128(mask, _mm_srl_epi16(a, count))
 }
 
 #[inline]
 #[target_feature(enable = "sse2")]
-pub unsafe fn _mm_sra_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
-    unimplemented!()
+pub unsafe fn _mm_sra_epi8_fallback(a: __m128i, count: __m128i) -> __m128i {
+    // Perform a 16-bit logical shift and then mask out garbage from adjacent lanes
+    let shift = _mm_cvtsi128_si64(count);
+    let mask = _mm_set1_epi8((0xFFu8 >> shift) as i8);
+    let shifted = _mm_and_si128(mask, _mm_srl_epi16(a, count));
+    // Manual sign extension
+    let sign = _mm_and_si128(a, _mm_set1_epi8(1 << 7));
+    let extended = _mm_sub_epi8(_mm_setzero_si128(), _mm_srl_epi16(sign, count));
+    _mm_or_si128(extended, shifted)
 }
 
 #[inline]
 #[target_feature(enable = "sse2")]
 pub unsafe fn _mm_sra_epi64_fallback(a: __m128i, count: __m128i) -> __m128i {
+    // Perform a logical shift followed by manual sign extension
     let sign = _mm_and_si128(a, _mm_set1_epi64x(1 << 63));
     let extended = _mm_sub_epi64(_mm_setzero_si128(), _mm_srl_epi64(sign, count));
     _mm_or_si128(extended, _mm_srl_epi64(a, count))
