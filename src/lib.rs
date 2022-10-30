@@ -105,6 +105,7 @@ mod tests {
     use core::mem;
     use core::ops::{Add, Div, Mul, Neg, Shl, Shr, Sub};
     use core::ops::{BitAnd, BitOr, BitXor, Not};
+    use std::num::Wrapping;
 
     use crate::{arch::*, mask::*, simd::*, Arch, Possible, Supported, Task};
 
@@ -207,7 +208,7 @@ mod tests {
 
         for xs in values.chunks(S::LANES) {
             for (vector, scalar, op) in shift_ops {
-                for shift in 0..(mem::size_of::<S::Elem>() * mem::size_of::<u8>()) {
+                for shift in 0..(mem::size_of::<S::Elem>() * 16) {
                     let res = vector(S::from_slice(xs), shift);
                     for (x, out) in xs.iter().zip(res.as_slice().iter()) {
                         let scalar = scalar(*x, shift);
@@ -315,8 +316,8 @@ mod tests {
                     (A::$type::min, $type::min, "min"),
                 ],
                 &[
-                    (A::$type::shl, $type::shl, "shl"),
-                    (A::$type::shr, $type::shr, "shr"),
+                    (A::$type::shl, |x, s| (Wrapping(x) << s).0, "shl"),
+                    (A::$type::shr, |x, s| (Wrapping(x) >> s).0, "shr"),
                 ],
                 &[
                     (A::$type::eq, |x, y| (x == y).into(), "eq"),
