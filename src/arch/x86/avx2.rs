@@ -735,7 +735,7 @@ macro_rules! impl_ord_mask {
 }
 
 macro_rules! impl_int {
-    ($int:ident, $set:ident, $add:ident, $sub:ident) => {
+    ($int:ident, $elem:ident, $set:ident, $add:ident, $sub:ident, $shl:ident, $shr:ident) => {
         impl Int for $int {}
 
         impl Add for $int {
@@ -808,8 +808,15 @@ macro_rules! impl_int {
             type Output = Self;
 
             #[inline]
-            fn shl(self, _rhs: usize) -> Self {
-                unimplemented!()
+            fn shl(self, rhs: usize) -> Self {
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: usize) -> $int {
+                    let shift = rhs & ($elem::BITS as usize - 1);
+                    $int($shl(lhs.0, _mm_cvtsi64_si128(shift as i64)))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
@@ -824,8 +831,15 @@ macro_rules! impl_int {
             type Output = Self;
 
             #[inline]
-            fn shr(self, _rhs: usize) -> Self {
-                unimplemented!()
+            fn shr(self, rhs: usize) -> Self {
+                #[inline]
+                #[target_feature(enable = "avx2")]
+                unsafe fn inner(lhs: $int, rhs: usize) -> $int {
+                    let shift = rhs & ($elem::BITS as usize - 1);
+                    $int($shr(lhs.0, _mm_cvtsi64_si128(shift as i64)))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
@@ -911,6 +925,30 @@ macro_rules! impl_int_mul {
     };
 }
 
+#[inline]
+#[target_feature(enable = "avx2")]
+pub unsafe fn _mm256_sll_epi8_fallback(_a: __m256i, _count: __m128i) -> __m256i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "avx2")]
+pub unsafe fn _mm256_srl_epi8_fallback(_a: __m256i, _count: __m128i) -> __m256i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "avx2")]
+pub unsafe fn _mm256_sra_epi8_fallback(_a: __m256i, _count: __m128i) -> __m256i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "avx2")]
+pub unsafe fn _mm256_sra_epi64_fallback(_a: __m256i, _count: __m128i) -> __m256i {
+    unimplemented!()
+}
+
 float_type! {
     f32x8, __m256, f32, 8, m32x8,
     _mm256_set1_ps, _mm256_loadu_ps, _mm256_storeu_ps, _mm256_castps_si256, _mm256_castsi256_ps, _mm256_blendv_ps,
@@ -929,10 +967,10 @@ int_type! { u64x4, u64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
 impl_ord_uint! { u8x32, m8x32, _mm256_cmpeq_epi8, _mm256_max_epu8, _mm256_min_epu8 }
 impl_ord_uint! { u16x16, m16x16, _mm256_cmpeq_epi16, _mm256_max_epu16, _mm256_min_epu16 }
 impl_ord_uint! { u32x8, m32x8, _mm256_cmpeq_epi32, _mm256_max_epu32, _mm256_min_epu32 }
-impl_int! { u8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { u16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
-impl_int! { u32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
-impl_int! { u64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
+impl_int! { u8x32, u8, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8, _mm256_sll_epi8_fallback, _mm256_srl_epi8_fallback }
+impl_int! { u16x16, u16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16, _mm256_sll_epi16, _mm256_srl_epi16 }
+impl_int! { u32x8, u32, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32, _mm256_sll_epi32, _mm256_srl_epi32 }
+impl_int! { u64x4, u64, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64, _mm256_sll_epi64, _mm256_srl_epi64 }
 impl_int_mul! { u8x32, u16x16, u32x8, u64x4 }
 
 // AVX2 lacks unsigned integer compares, but it does have unsigned integer min/max for 8, 16, and
@@ -964,10 +1002,10 @@ int_type! { i64x4, i64, 4, m64x4, _mm256_set1_epi64x, _mm256_cmpeq_epi64 }
 impl_ord_int! { i8x32, m8x32, _mm256_cmpgt_epi8, _mm256_max_epi8, _mm256_min_epi8 }
 impl_ord_int! { i16x16, m16x16, _mm256_cmpgt_epi16, _mm256_max_epi16, _mm256_min_epi16 }
 impl_ord_int! { i32x8, m32x8, _mm256_cmpgt_epi32, _mm256_max_epi32, _mm256_min_epi32 }
-impl_int! { i8x32, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8 }
-impl_int! { i16x16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16 }
-impl_int! { i32x8, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32 }
-impl_int! { i64x4, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64 }
+impl_int! { i8x32, i8, _mm256_set1_epi8, _mm256_add_epi8, _mm256_sub_epi8, _mm256_sll_epi8_fallback, _mm256_sra_epi8_fallback }
+impl_int! { i16x16, i16, _mm256_set1_epi16, _mm256_add_epi16, _mm256_sub_epi16, _mm256_sll_epi16, _mm256_sra_epi16 }
+impl_int! { i32x8, i32, _mm256_set1_epi32, _mm256_add_epi32, _mm256_sub_epi32, _mm256_sll_epi32, _mm256_sra_epi32 }
+impl_int! { i64x4, i64, _mm256_set1_epi64x, _mm256_add_epi64, _mm256_sub_epi64, _mm256_sll_epi64, _mm256_sra_epi64_fallback }
 impl_int_mul! { i8x32, i16x16, i32x8, i64x4 }
 
 // 64-bit integer min/max ops (_mm256_{min,max}_epi64) require AVX512, so for i64x4 we just fall

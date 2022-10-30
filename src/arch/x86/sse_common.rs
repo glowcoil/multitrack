@@ -1,3 +1,8 @@
+#[cfg(target_arch = "x86")]
+use std::arch::x86::*;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 macro_rules! float_type {
     (
         $feature:literal,
@@ -608,7 +613,7 @@ macro_rules! impl_ord_mask {
 pub(super) use impl_ord_mask;
 
 macro_rules! impl_int {
-    ($feature:literal, $int:ident, $set:ident, $add:ident, $sub:ident) => {
+    ($feature:literal, $int:ident, $elem:ident, $set:ident, $add:ident, $sub:ident, $shl:ident, $shr:ident) => {
         impl Int for $int {}
 
         impl Add for $int {
@@ -681,8 +686,15 @@ macro_rules! impl_int {
             type Output = Self;
 
             #[inline]
-            fn shl(self, _rhs: usize) -> Self {
-                unimplemented!()
+            fn shl(self, rhs: usize) -> Self {
+                #[inline]
+                #[target_feature(enable = $feature)]
+                unsafe fn inner(lhs: $int, rhs: usize) -> $int {
+                    let shift = rhs & ($elem::BITS as usize - 1);
+                    $int($shl(lhs.0, _mm_cvtsi64_si128(shift as i64)))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
@@ -697,8 +709,15 @@ macro_rules! impl_int {
             type Output = Self;
 
             #[inline]
-            fn shr(self, _rhs: usize) -> Self {
-                unimplemented!()
+            fn shr(self, rhs: usize) -> Self {
+                #[inline]
+                #[target_feature(enable = $feature)]
+                unsafe fn inner(lhs: $int, rhs: usize) -> $int {
+                    let shift = rhs & ($elem::BITS as usize - 1);
+                    $int($shr(lhs.0, _mm_cvtsi64_si128(shift as i64)))
+                }
+
+                unsafe { inner(self, rhs) }
             }
         }
 
@@ -711,3 +730,27 @@ macro_rules! impl_int {
     };
 }
 pub(super) use impl_int;
+
+#[inline]
+#[target_feature(enable = "sse2")]
+pub unsafe fn _mm_sll_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "sse2")]
+pub unsafe fn _mm_srl_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "sse2")]
+pub unsafe fn _mm_sra_epi8_fallback(_a: __m128i, _count: __m128i) -> __m128i {
+    unimplemented!()
+}
+
+#[inline]
+#[target_feature(enable = "sse2")]
+pub unsafe fn _mm_sra_epi64_fallback(_a: __m128i, _count: __m128i) -> __m128i {
+    unimplemented!()
+}

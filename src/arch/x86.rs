@@ -3,7 +3,7 @@ use crate::{Arch, Possible, Supported, Task};
 mod avx2;
 mod sse2;
 mod sse4_2;
-mod sse_macros;
+mod sse_common;
 
 pub struct Sse2;
 

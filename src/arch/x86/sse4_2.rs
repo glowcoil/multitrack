@@ -13,7 +13,7 @@ use std::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
 
-use super::sse_macros::{float_type, impl_int, impl_ord_mask, int_type};
+use super::sse_common::*;
 use crate::mask::*;
 use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
 use crate::{Arch, Task};
@@ -261,10 +261,10 @@ int_type! { "sse4.2", u64x2, u64, 2, m64x2, _mm_set1_epi64x, _mm_blendv_epi8 }
 impl_ord_uint! { u8x16, m8x16, _mm_cmpeq_epi8, _mm_max_epu8, _mm_min_epu8 }
 impl_ord_uint! { u16x8, m16x8, _mm_cmpeq_epi16, _mm_max_epu16, _mm_min_epu16 }
 impl_ord_uint! { u32x4, m32x4, _mm_cmpeq_epi32, _mm_max_epu32, _mm_min_epu32 }
-impl_int! { "sse4.2", u8x16, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8 }
-impl_int! { "sse4.2", u16x8, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16 }
-impl_int! { "sse4.2", u32x4, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32 }
-impl_int! { "sse4.2", u64x2, _mm_set1_epi64x, _mm_add_epi64, _mm_sub_epi64 }
+impl_int! { "sse4.2", u8x16, u8, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8, _mm_sll_epi8_fallback, _mm_srl_epi8_fallback }
+impl_int! { "sse4.2", u16x8, u16, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16, _mm_sll_epi16, _mm_srl_epi16 }
+impl_int! { "sse4.2", u32x4, u32, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32, _mm_sll_epi32, _mm_srl_epi32 }
+impl_int! { "sse4.2", u64x2, u64, _mm_set1_epi64x, _mm_add_epi64, _mm_sub_epi64, _mm_sll_epi64, _mm_srl_epi64 }
 impl_int_mul! { u8x16, u16x8, u32x4, u64x2 }
 
 impl LanesEq for u64x2 {
@@ -306,10 +306,10 @@ int_type! { "sse4.2", i64x2, i64, 2, m64x2, _mm_set1_epi64x, _mm_blendv_epi8 }
 impl_ord_int! { i8x16, m8x16, _mm_cmpeq_epi8, _mm_cmplt_epi8, _mm_max_epi8, _mm_min_epi8 }
 impl_ord_int! { i16x8, m16x8, _mm_cmpeq_epi16, _mm_cmplt_epi16, _mm_max_epi16, _mm_min_epi16 }
 impl_ord_int! { i32x4, m32x4, _mm_cmpeq_epi32, _mm_cmplt_epi32, _mm_max_epi32, _mm_min_epi32 }
-impl_int! { "sse4.2", i8x16, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8 }
-impl_int! { "sse4.2", i16x8, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16 }
-impl_int! { "sse4.2", i32x4, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32 }
-impl_int! { "sse4.2", i64x2, _mm_set1_epi64x, _mm_add_epi64, _mm_sub_epi64 }
+impl_int! { "sse4.2", i8x16, i8, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8, _mm_sll_epi8_fallback, _mm_sra_epi8_fallback }
+impl_int! { "sse4.2", i16x8, i16, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16, _mm_sll_epi16, _mm_sra_epi16 }
+impl_int! { "sse4.2", i32x4, i32, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32, _mm_sll_epi32, _mm_sra_epi32 }
+impl_int! { "sse4.2", i64x2, i64, _mm_set1_epi64x, _mm_add_epi64, _mm_sub_epi64, _mm_sll_epi64, _mm_sra_epi64_fallback }
 impl_int_mul! { i8x16, i16x8, i32x4, i64x2 }
 
 impl LanesEq for i64x2 {
