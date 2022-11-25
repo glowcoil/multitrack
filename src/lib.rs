@@ -16,18 +16,18 @@ where
     Self::m32: Select<Self::f32> + Select<Self::i32> + Select<Self::u32> + Select<Self::m32>,
     Self::m64: Select<Self::f64> + Select<Self::i64> + Select<Self::u64> + Select<Self::m64>,
 {
-    type f32: Simd<Elem = f32, Mask = Self::m32> + Float;
-    type f64: Simd<Elem = f64, Mask = Self::m64> + Float;
+    type f32: Simd<Elem = f32, Mask = Self::m32> + Convert32<Self> + Float;
+    type f64: Simd<Elem = f64, Mask = Self::m64> + Convert64<Self> + Float;
 
-    type u8: Simd<Elem = u8, Mask = Self::m8> + Int + Bitwise;
-    type u16: Simd<Elem = u16, Mask = Self::m16> + Int + Bitwise;
-    type u32: Simd<Elem = u32, Mask = Self::m32> + Int + Bitwise;
-    type u64: Simd<Elem = u64, Mask = Self::m64> + Int + Bitwise;
+    type u8: Simd<Elem = u8, Mask = Self::m8> + Convert8<Self> + Int + Bitwise;
+    type u16: Simd<Elem = u16, Mask = Self::m16> + Convert16<Self> + Int + Bitwise;
+    type u32: Simd<Elem = u32, Mask = Self::m32> + Convert32<Self> + Int + Bitwise;
+    type u64: Simd<Elem = u64, Mask = Self::m64> + Convert64<Self> + Int + Bitwise;
 
-    type i8: Simd<Elem = i8, Mask = Self::m8> + Int + Bitwise;
-    type i16: Simd<Elem = i16, Mask = Self::m16> + Int + Bitwise;
-    type i32: Simd<Elem = i32, Mask = Self::m32> + Int + Bitwise;
-    type i64: Simd<Elem = i64, Mask = Self::m64> + Int + Bitwise;
+    type i8: Simd<Elem = i8, Mask = Self::m8> + Convert8<Self> + Int + Bitwise;
+    type i16: Simd<Elem = i16, Mask = Self::m16> + Convert16<Self> + Int + Bitwise;
+    type i32: Simd<Elem = i32, Mask = Self::m32> + Convert32<Self> + Int + Bitwise;
+    type i64: Simd<Elem = i64, Mask = Self::m64> + Convert64<Self> + Int + Bitwise;
 
     type m8: Simd<Elem = m8, Mask = Self::m8> + Bitwise;
     type m16: Simd<Elem = m16, Mask = Self::m16> + Bitwise;
@@ -37,6 +37,38 @@ where
     const NAME: &'static str;
 
     fn invoke<T: Task>(task: T) -> T::Result;
+}
+
+pub trait Convert8<A: Arch + ?Sized>: Sized
+where
+    Self: Widen<A::f32> + Widen<A::f64>,
+    Self: Convert<A::u8> + Widen<A::u16> + Widen<A::u32> + Widen<A::u64>,
+    Self: Convert<A::i8> + Widen<A::i16> + Widen<A::i32> + Widen<A::i64>,
+{
+}
+
+pub trait Convert16<A: Arch + ?Sized>: Sized
+where
+    Self: Widen<A::f32> + Widen<A::f64>,
+    Self: Narrow<A::u8> + Convert<A::u16> + Widen<A::u32> + Widen<A::u64>,
+    Self: Narrow<A::i8> + Convert<A::i16> + Widen<A::i32> + Widen<A::i64>,
+{
+}
+
+pub trait Convert32<A: Arch + ?Sized>: Sized
+where
+    Self: Convert<A::f32> + Widen<A::f64>,
+    Self: Narrow<A::u8> + Narrow<A::u16> + Convert<A::u32> + Widen<A::u64>,
+    Self: Narrow<A::i8> + Narrow<A::i16> + Convert<A::i32> + Widen<A::i64>,
+{
+}
+
+pub trait Convert64<A: Arch + ?Sized>: Sized
+where
+    Self: Narrow<A::f32> + Convert<A::f64>,
+    Self: Narrow<A::u8> + Narrow<A::u16> + Narrow<A::u32> + Convert<A::u64>,
+    Self: Narrow<A::i8> + Narrow<A::i16> + Narrow<A::i32> + Convert<A::i64>,
+{
 }
 
 pub trait Task {

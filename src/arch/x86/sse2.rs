@@ -15,8 +15,8 @@ use std::arch::x86_64::*;
 
 use super::sse_common::*;
 use crate::mask::*;
-use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-use crate::{Arch, Task};
+use crate::simd::{Bitwise, Convert, Float, Int, LanesEq, LanesOrd, Narrow, Select, Simd, Widen};
+use crate::{Arch, Convert16, Convert32, Convert64, Convert8, Task};
 
 pub struct Sse2Impl;
 
@@ -163,11 +163,17 @@ float_type! {
     _mm_cmpeq_pd, _mm_cmpneq_pd, _mm_cmplt_pd, _mm_cmple_pd, _mm_cmpgt_pd, _mm_cmpge_pd,
     _mm_min_pd, _mm_max_pd, _mm_add_pd, _mm_sub_pd, _mm_mul_pd, _mm_div_pd, _mm_xor_pd,
 }
+impl_convert32! { f32x4, Sse2Impl }
+impl_convert64! { f64x2, Sse2Impl }
 
 int_type! { "sse2", u8x16, u8, 16, m8x16, _mm_set1_epi8, _mm_blendv_epi8_fallback }
 int_type! { "sse2", u16x8, u16, 8, m16x8, _mm_set1_epi16, _mm_blendv_epi8_fallback }
 int_type! { "sse2", u32x4, u32, 4, m32x4, _mm_set1_epi32, _mm_blendv_epi8_fallback }
 int_type! { "sse2", u64x2, u64, 2, m64x2, _mm_set1_epi64x, _mm_blendv_epi8_fallback }
+impl_convert8! { u8x16, Sse2Impl }
+impl_convert16! { u16x8, Sse2Impl }
+impl_convert32! { u32x4, Sse2Impl }
+impl_convert64! { u64x2, Sse2Impl }
 impl_int! { "sse2", u8x16, u8, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8, _mm_sll_epi8_fallback, _mm_srl_epi8_fallback }
 impl_int! { "sse2", u16x8, u16, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16, _mm_sll_epi16, _mm_srl_epi16 }
 impl_int! { "sse2", u32x4, u32, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32, _mm_sll_epi32, _mm_srl_epi32 }
@@ -342,6 +348,10 @@ int_type! { "sse2", i8x16, i8, 16, m8x16, _mm_set1_epi8, _mm_blendv_epi8_fallbac
 int_type! { "sse2", i16x8, i16, 8, m16x8, _mm_set1_epi16, _mm_blendv_epi8_fallback }
 int_type! { "sse2", i32x4, i32, 4, m32x4, _mm_set1_epi32, _mm_blendv_epi8_fallback }
 int_type! { "sse2", i64x2, i64, 2, m64x2, _mm_set1_epi64x, _mm_blendv_epi8_fallback }
+impl_convert8! { i8x16, Sse2Impl }
+impl_convert16! { i16x8, Sse2Impl }
+impl_convert32! { i32x4, Sse2Impl }
+impl_convert64! { i64x2, Sse2Impl }
 impl_int! { "sse2", i8x16, i8, _mm_set1_epi8, _mm_add_epi8, _mm_sub_epi8, _mm_sll_epi8_fallback, _mm_sra_epi8_fallback }
 impl_int! { "sse2", i16x8, i16, _mm_set1_epi16, _mm_add_epi16, _mm_sub_epi16, _mm_sll_epi16, _mm_sra_epi16 }
 impl_int! { "sse2", i32x4, i32, _mm_set1_epi32, _mm_add_epi32, _mm_sub_epi32, _mm_sll_epi32, _mm_sra_epi32 }

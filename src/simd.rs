@@ -104,3 +104,19 @@ pub trait LanesOrd<Rhs = Self>: LanesEq<Rhs> {
 pub trait Select<V> {
     fn select(self, if_true: V, if_false: V) -> V;
 }
+
+pub trait Convert<T> {
+    fn convert(self) -> T;
+}
+
+pub trait Widen<T> {
+    fn widen<F>(self, consume: F)
+    where
+        F: FnMut(T);
+}
+
+pub trait Narrow<T> {
+    fn narrow<F>(produce: F)
+    where
+        F: FnMut() -> Self;
+}

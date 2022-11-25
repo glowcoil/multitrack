@@ -535,6 +535,364 @@ macro_rules! int_type {
 }
 pub(super) use int_type;
 
+macro_rules! impl_convert8 {
+    ($vector:ident, $backend:ident) => {
+        impl Convert8<$backend> for $vector {}
+
+        impl Widen<f32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u8x16> for $vector {
+            fn convert(self) -> u8x16 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u16x8> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u16x8),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i8x16> for $vector {
+            fn convert(self) -> i8x16 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i16x8> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i16x8),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x2),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+pub(super) use impl_convert8;
+
+macro_rules! impl_convert16 {
+    ($vector:ident, $backend:ident) => {
+        impl Convert16<$backend> for $vector {}
+
+        impl Widen<f32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u16x8> for $vector {
+            fn convert(self) -> u16x8 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i16x8> for $vector {
+            fn convert(self) -> i16x8 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i32x4> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i32x4),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x2),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+pub(super) use impl_convert16;
+
+macro_rules! impl_convert32 {
+    ($vector:ident, $backend:ident) => {
+        impl Convert32<$backend> for $vector {}
+
+        impl Convert<f32x4> for $vector {
+            fn convert(self) -> f32x4 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u16x8> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u32x4> for $vector {
+            fn convert(self) -> u32x4 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x2),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i16x8> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i32x4> for $vector {
+            fn convert(self) -> i32x4 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x2> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x2),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+pub(super) use impl_convert32;
+
+macro_rules! impl_convert64 {
+    ($vector:ident, $backend:ident) => {
+        impl Convert64<$backend> for $vector {}
+
+        impl Narrow<f32x4> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<f64x2> for $vector {
+            fn convert(self) -> f64x2 {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u16x8> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u32x4> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u64x2> for $vector {
+            fn convert(self) -> u64x2 {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x16> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i16x8> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i32x4> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i64x2> for $vector {
+            fn convert(self) -> i64x2 {
+                unimplemented!()
+            }
+        }
+    };
+}
+pub(super) use impl_convert64;
+
 macro_rules! impl_ord_mask {
     ($feature:literal, $mask:ident) => {
         impl LanesEq for $mask {

@@ -9,8 +9,8 @@ use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use core::slice;
 
 use crate::mask::*;
-use crate::simd::{Bitwise, Float, Int, LanesEq, LanesOrd, Select, Simd};
-use crate::{Arch, Task};
+use crate::simd::{Bitwise, Convert, Float, Int, LanesEq, LanesOrd, Narrow, Select, Simd, Widen};
+use crate::{Arch, Convert16, Convert32, Convert64, Convert8, Task};
 
 pub struct ScalarImpl;
 
@@ -244,6 +244,360 @@ macro_rules! wrapping_scalar_type {
                 } else {
                     if_false
                 }
+            }
+        }
+    };
+}
+
+macro_rules! impl_convert8 {
+    ($vector:ident) => {
+        impl Convert8<ScalarImpl> for $vector {}
+
+        impl Widen<f32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u8x1> for $vector {
+            fn convert(self) -> u8x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u16x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u16x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i8x1> for $vector {
+            fn convert(self) -> i8x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i16x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i16x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x1),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+
+macro_rules! impl_convert16 {
+    ($vector:ident) => {
+        impl Convert16<ScalarImpl> for $vector {}
+
+        impl Widen<f32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u16x1> for $vector {
+            fn convert(self) -> u16x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i16x1> for $vector {
+            fn convert(self) -> i16x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i32x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i32x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x1),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+
+macro_rules! impl_convert32 {
+    ($vector:ident) => {
+        impl Convert32<ScalarImpl> for $vector {}
+
+        impl Convert<f32x1> for $vector {
+            fn convert(self) -> f32x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<f64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(f64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u16x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u32x1> for $vector {
+            fn convert(self) -> u32x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<u64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(u64x1),
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i16x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i32x1> for $vector {
+            fn convert(self) -> i32x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Widen<i64x1> for $vector {
+            fn widen<F>(self, _consume: F)
+            where
+                F: FnMut(i64x1),
+            {
+                unimplemented!()
+            }
+        }
+    };
+}
+
+macro_rules! impl_convert64 {
+    ($vector:ident) => {
+        impl Convert64<ScalarImpl> for $vector {}
+
+        impl Narrow<f32x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<f64x1> for $vector {
+            fn convert(self) -> f64x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u16x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<u32x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<u64x1> for $vector {
+            fn convert(self) -> u64x1 {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i8x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i16x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Narrow<i32x1> for $vector {
+            fn narrow<F>(_produce: F)
+            where
+                F: FnMut() -> Self,
+            {
+                unimplemented!()
+            }
+        }
+
+        impl Convert<i64x1> for $vector {
+            fn convert(self) -> i64x1 {
+                unimplemented!()
             }
         }
     };
@@ -504,6 +858,8 @@ macro_rules! impl_bitwise {
 
 scalar_type! { f32x1, f32, m32x1 }
 scalar_type! { f64x1, f64, m64x1 }
+impl_convert32! { f32x1 }
+impl_convert64! { f64x1 }
 impl_float! { f64x1 }
 impl_float! { f32x1 }
 
@@ -511,6 +867,10 @@ wrapping_scalar_type! { u8x1, u8, m8x1 }
 wrapping_scalar_type! { u16x1, u16, m16x1 }
 wrapping_scalar_type! { u32x1, u32, m32x1 }
 wrapping_scalar_type! { u64x1, u64, m64x1 }
+impl_convert8! { u8x1 }
+impl_convert16! { u16x1 }
+impl_convert32! { u32x1 }
+impl_convert64! { u64x1 }
 impl_int! { u8x1 }
 impl_int! { u16x1 }
 impl_int! { u32x1 }
@@ -524,6 +884,10 @@ wrapping_scalar_type! { i8x1, i8, m8x1 }
 wrapping_scalar_type! { i16x1, i16, m16x1 }
 wrapping_scalar_type! { i32x1, i32, m32x1 }
 wrapping_scalar_type! { i64x1, i64, m64x1 }
+impl_convert8! { i8x1 }
+impl_convert16! { i16x1 }
+impl_convert32! { i32x1 }
+impl_convert64! { i64x1 }
 impl_int! { i8x1 }
 impl_int! { i16x1 }
 impl_int! { i32x1 }
