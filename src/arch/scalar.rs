@@ -8,8 +8,7 @@ use core::ops::{Index, IndexMut};
 use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 use core::slice;
 
-use crate::mask::*;
-use crate::simd::{Bitwise, Convert, Float, Int, LanesEq, LanesOrd, Narrow, Select, Simd, Widen};
+use crate::simd::*;
 use crate::{Arch, Convert16, Convert32, Convert64, Convert8, Task};
 
 pub struct ScalarImpl;
@@ -56,38 +55,6 @@ macro_rules! scalar_type {
             #[inline]
             fn new(elem: Self::Elem) -> Self {
                 $scalar(elem)
-            }
-
-            #[inline]
-            fn as_slice(&self) -> &[Self::Elem] {
-                slice::from_ref(&self.0)
-            }
-
-            #[inline]
-            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-                slice::from_mut(&mut self.0)
-            }
-
-            #[inline]
-            fn from_slice(slice: &[Self::Elem]) -> Self {
-                Self::new(slice[0])
-            }
-
-            #[inline]
-            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-                slice[0] = self.0;
-            }
-
-            #[inline]
-            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-                unsafe { slice.align_to::<Self>() }
-            }
-
-            #[inline]
-            fn align_mut_slice(
-                slice: &mut [Self::Elem],
-            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-                unsafe { slice.align_to_mut::<Self>() }
             }
         }
 
@@ -161,38 +128,6 @@ macro_rules! wrapping_scalar_type {
             fn new(elem: Self::Elem) -> Self {
                 $scalar(Wrapping(elem))
             }
-
-            #[inline]
-            fn as_slice(&self) -> &[Self::Elem] {
-                slice::from_ref(&self.0 .0)
-            }
-
-            #[inline]
-            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
-                slice::from_mut(&mut self.0 .0)
-            }
-
-            #[inline]
-            fn from_slice(slice: &[Self::Elem]) -> Self {
-                Self::new(slice[0])
-            }
-
-            #[inline]
-            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
-                slice[0] = self.0 .0;
-            }
-
-            #[inline]
-            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
-                unsafe { slice.align_to::<Self>() }
-            }
-
-            #[inline]
-            fn align_mut_slice(
-                slice: &mut [Self::Elem],
-            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
-                unsafe { slice.align_to_mut::<Self>() }
-            }
         }
 
         impl LanesEq for $scalar {
@@ -244,6 +179,82 @@ macro_rules! wrapping_scalar_type {
                 } else {
                     if_false
                 }
+            }
+        }
+    };
+}
+
+macro_rules! impl_as_slice {
+    ($scalar:ident) => {
+        impl AsSlice for $scalar {
+            #[inline]
+            fn as_slice(&self) -> &[Self::Elem] {
+                slice::from_ref(&self.0)
+            }
+
+            #[inline]
+            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+                slice::from_mut(&mut self.0)
+            }
+
+            #[inline]
+            fn from_slice(slice: &[Self::Elem]) -> Self {
+                Self::new(slice[0])
+            }
+
+            #[inline]
+            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+                slice[0] = self.0;
+            }
+
+            #[inline]
+            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+                unsafe { slice.align_to::<Self>() }
+            }
+
+            #[inline]
+            fn align_mut_slice(
+                slice: &mut [Self::Elem],
+            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+                unsafe { slice.align_to_mut::<Self>() }
+            }
+        }
+    };
+}
+
+macro_rules! impl_as_slice_wrapping {
+    ($scalar:ident) => {
+        impl AsSlice for $scalar {
+            #[inline]
+            fn as_slice(&self) -> &[Self::Elem] {
+                slice::from_ref(&self.0 .0)
+            }
+
+            #[inline]
+            fn as_mut_slice(&mut self) -> &mut [Self::Elem] {
+                slice::from_mut(&mut self.0 .0)
+            }
+
+            #[inline]
+            fn from_slice(slice: &[Self::Elem]) -> Self {
+                Self::new(slice[0])
+            }
+
+            #[inline]
+            fn write_to_slice(&self, slice: &mut [Self::Elem]) {
+                slice[0] = self.0 .0;
+            }
+
+            #[inline]
+            fn align_slice(slice: &[Self::Elem]) -> (&[Self::Elem], &[Self], &[Self::Elem]) {
+                unsafe { slice.align_to::<Self>() }
+            }
+
+            #[inline]
+            fn align_mut_slice(
+                slice: &mut [Self::Elem],
+            ) -> (&mut [Self::Elem], &mut [Self], &mut [Self::Elem]) {
+                unsafe { slice.align_to_mut::<Self>() }
             }
         }
     };
@@ -790,67 +801,130 @@ macro_rules! impl_int {
                 self.0 >>= rhs;
             }
         }
-    };
-}
 
-macro_rules! impl_bitwise {
-    ($bitwise:ident) => {
-        impl Bitwise for $bitwise {}
-
-        impl BitAnd for $bitwise {
+        impl BitAnd for $int {
             type Output = Self;
 
             #[inline]
             fn bitand(self, rhs: Self) -> Self::Output {
-                $bitwise(self.0 & rhs.0)
+                $int(self.0 & rhs.0)
             }
         }
 
-        impl BitAndAssign for $bitwise {
+        impl BitAndAssign for $int {
             #[inline]
             fn bitand_assign(&mut self, rhs: Self) {
                 self.0 &= rhs.0;
             }
         }
 
-        impl BitOr for $bitwise {
+        impl BitOr for $int {
             type Output = Self;
 
             #[inline]
             fn bitor(self, rhs: Self) -> Self::Output {
-                $bitwise(self.0 | rhs.0)
+                $int(self.0 | rhs.0)
             }
         }
 
-        impl BitOrAssign for $bitwise {
+        impl BitOrAssign for $int {
             #[inline]
             fn bitor_assign(&mut self, rhs: Self) {
                 self.0 |= rhs.0;
             }
         }
 
-        impl BitXor for $bitwise {
+        impl BitXor for $int {
             type Output = Self;
 
             #[inline]
             fn bitxor(self, rhs: Self) -> Self::Output {
-                $bitwise(self.0 ^ rhs.0)
+                $int(self.0 ^ rhs.0)
             }
         }
 
-        impl BitXorAssign for $bitwise {
+        impl BitXorAssign for $int {
             #[inline]
             fn bitxor_assign(&mut self, rhs: Self) {
                 self.0 ^= rhs.0;
             }
         }
 
-        impl Not for $bitwise {
+        impl Not for $int {
             type Output = Self;
 
             #[inline]
             fn not(self) -> Self::Output {
-                $bitwise(!self.0)
+                $int(!self.0)
+            }
+        }
+    };
+}
+
+macro_rules! impl_mask {
+    ($mask:ident, $uint:ident) => {
+        impl Mask for $mask {}
+
+        impl BitAnd for $mask {
+            type Output = Self;
+
+            #[inline]
+            fn bitand(self, rhs: Self) -> Self::Output {
+                $mask(self.0 & rhs.0)
+            }
+        }
+
+        impl BitAndAssign for $mask {
+            #[inline]
+            fn bitand_assign(&mut self, rhs: Self) {
+                self.0 &= rhs.0;
+            }
+        }
+
+        impl BitOr for $mask {
+            type Output = Self;
+
+            #[inline]
+            fn bitor(self, rhs: Self) -> Self::Output {
+                $mask(self.0 | rhs.0)
+            }
+        }
+
+        impl BitOrAssign for $mask {
+            #[inline]
+            fn bitor_assign(&mut self, rhs: Self) {
+                self.0 |= rhs.0;
+            }
+        }
+
+        impl BitXor for $mask {
+            type Output = Self;
+
+            #[inline]
+            fn bitxor(self, rhs: Self) -> Self::Output {
+                $mask(self.0 ^ rhs.0)
+            }
+        }
+
+        impl BitXorAssign for $mask {
+            #[inline]
+            fn bitxor_assign(&mut self, rhs: Self) {
+                self.0 ^= rhs.0;
+            }
+        }
+
+        impl Not for $mask {
+            type Output = Self;
+
+            #[inline]
+            fn not(self) -> Self::Output {
+                $mask(!self.0)
+            }
+        }
+
+        impl Convert<$uint> for $mask {
+            fn convert(self) -> $uint {
+                $uint(Wrapping(if self.0 { !0 } else { 0 }))
             }
         }
     };
@@ -858,6 +932,8 @@ macro_rules! impl_bitwise {
 
 scalar_type! { f32x1, f32, m32x1 }
 scalar_type! { f64x1, f64, m64x1 }
+impl_as_slice! { f32x1 }
+impl_as_slice! { f64x1 }
 impl_convert32! { f32x1 }
 impl_convert64! { f64x1 }
 impl_float! { f64x1 }
@@ -867,6 +943,10 @@ wrapping_scalar_type! { u8x1, u8, m8x1 }
 wrapping_scalar_type! { u16x1, u16, m16x1 }
 wrapping_scalar_type! { u32x1, u32, m32x1 }
 wrapping_scalar_type! { u64x1, u64, m64x1 }
+impl_as_slice_wrapping! { u8x1 }
+impl_as_slice_wrapping! { u16x1 }
+impl_as_slice_wrapping! { u32x1 }
+impl_as_slice_wrapping! { u64x1 }
 impl_convert8! { u8x1 }
 impl_convert16! { u16x1 }
 impl_convert32! { u32x1 }
@@ -875,15 +955,15 @@ impl_int! { u8x1 }
 impl_int! { u16x1 }
 impl_int! { u32x1 }
 impl_int! { u64x1 }
-impl_bitwise! { u8x1 }
-impl_bitwise! { u16x1 }
-impl_bitwise! { u32x1 }
-impl_bitwise! { u64x1 }
 
 wrapping_scalar_type! { i8x1, i8, m8x1 }
 wrapping_scalar_type! { i16x1, i16, m16x1 }
 wrapping_scalar_type! { i32x1, i32, m32x1 }
 wrapping_scalar_type! { i64x1, i64, m64x1 }
+impl_as_slice_wrapping! { i8x1 }
+impl_as_slice_wrapping! { i16x1 }
+impl_as_slice_wrapping! { i32x1 }
+impl_as_slice_wrapping! { i64x1 }
 impl_convert8! { i8x1 }
 impl_convert16! { i16x1 }
 impl_convert32! { i32x1 }
@@ -892,16 +972,12 @@ impl_int! { i8x1 }
 impl_int! { i16x1 }
 impl_int! { i32x1 }
 impl_int! { i64x1 }
-impl_bitwise! { i8x1 }
-impl_bitwise! { i16x1 }
-impl_bitwise! { i32x1 }
-impl_bitwise! { i64x1 }
 
-scalar_type! { m8x1, m8, m8x1 }
-scalar_type! { m16x1, m16, m16x1 }
-scalar_type! { m32x1, m32, m32x1 }
-scalar_type! { m64x1, m64, m64x1 }
-impl_bitwise! { m8x1 }
-impl_bitwise! { m16x1 }
-impl_bitwise! { m32x1 }
-impl_bitwise! { m64x1 }
+scalar_type! { m8x1, bool, m8x1 }
+scalar_type! { m16x1, bool, m16x1 }
+scalar_type! { m32x1, bool, m32x1 }
+scalar_type! { m64x1, bool, m64x1 }
+impl_mask! { m8x1, u8x1 }
+impl_mask! { m16x1, u16x1 }
+impl_mask! { m32x1, u32x1 }
+impl_mask! { m64x1, u64x1 }

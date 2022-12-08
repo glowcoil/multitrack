@@ -7,7 +7,6 @@ use core::ops::{Shl, ShlAssign, Shr, ShrAssign};
 pub trait Simd: Copy + Clone + Debug + Default + Send + Sync + Sized
 where
     Self: LanesEq<Output = Self::Mask> + LanesOrd<Output = Self::Mask>,
-    Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
 {
     type Elem;
     type Mask: Select<Self>;
@@ -15,7 +14,12 @@ where
     const LANES: usize;
 
     fn new(elem: Self::Elem) -> Self;
+}
 
+pub trait AsSlice: Simd
+where
+    Self: Index<usize, Output = Self::Elem> + IndexMut<usize, Output = Self::Elem>,
+{
     fn as_slice(&self) -> &[Self::Elem];
     fn as_mut_slice(&mut self) -> &mut [Self::Elem];
     fn from_slice(slice: &[Self::Elem]) -> Self;
@@ -44,10 +48,14 @@ where
     Self: Neg<Output = Self>,
     Self: Shl<usize, Output = Self> + ShlAssign<usize>,
     Self: Shr<usize, Output = Self> + ShrAssign<usize>,
+    Self: BitAnd<Output = Self> + BitAndAssign,
+    Self: BitOr<Output = Self> + BitOrAssign,
+    Self: BitXor<Output = Self> + BitXorAssign,
+    Self: Not<Output = Self>,
 {
 }
 
-pub trait Bitwise: Sized
+pub trait Mask: Sized
 where
     Self: BitAnd<Output = Self> + BitAndAssign,
     Self: BitOr<Output = Self> + BitOrAssign,
@@ -57,7 +65,7 @@ where
 }
 
 pub trait LanesEq<Rhs = Self>: Sized {
-    type Output: Bitwise + Select<Self>;
+    type Output: Mask + Select<Self>;
 
     fn eq(&self, other: &Self) -> Self::Output;
 
