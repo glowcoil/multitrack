@@ -362,7 +362,7 @@ macro_rules! impl_convert16 {
         }
 
         impl Narrow<u8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u8x1
             where
                 F: FnMut() -> Self,
             {
@@ -395,7 +395,7 @@ macro_rules! impl_convert16 {
         }
 
         impl Narrow<i8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i8x1
             where
                 F: FnMut() -> Self,
             {
@@ -449,7 +449,7 @@ macro_rules! impl_convert32 {
         }
 
         impl Narrow<u8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u8x1
             where
                 F: FnMut() -> Self,
             {
@@ -458,7 +458,7 @@ macro_rules! impl_convert32 {
         }
 
         impl Narrow<u16x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u16x1
             where
                 F: FnMut() -> Self,
             {
@@ -482,7 +482,7 @@ macro_rules! impl_convert32 {
         }
 
         impl Narrow<i8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i8x1
             where
                 F: FnMut() -> Self,
             {
@@ -491,7 +491,7 @@ macro_rules! impl_convert32 {
         }
 
         impl Narrow<i16x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i16x1
             where
                 F: FnMut() -> Self,
             {
@@ -521,7 +521,7 @@ macro_rules! impl_convert64 {
         impl Convert64<ScalarImpl> for $vector {}
 
         impl Narrow<f32x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> f32x1
             where
                 F: FnMut() -> Self,
             {
@@ -536,7 +536,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<u8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u8x1
             where
                 F: FnMut() -> Self,
             {
@@ -545,7 +545,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<u16x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u16x1
             where
                 F: FnMut() -> Self,
             {
@@ -554,7 +554,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<u32x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> u32x1
             where
                 F: FnMut() -> Self,
             {
@@ -569,7 +569,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<i8x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i8x1
             where
                 F: FnMut() -> Self,
             {
@@ -578,7 +578,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<i16x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i16x1
             where
                 F: FnMut() -> Self,
             {
@@ -587,7 +587,7 @@ macro_rules! impl_convert64 {
         }
 
         impl Narrow<i32x1> for $vector {
-            fn narrow<F>(_produce: F)
+            fn narrow<F>(_produce: F) -> i32x1
             where
                 F: FnMut() -> Self,
             {

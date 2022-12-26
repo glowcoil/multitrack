@@ -116,7 +116,7 @@ pub trait Widen<T> {
 }
 
 pub trait Narrow<T> {
-    fn narrow<F>(produce: F)
+    fn narrow<F>(produce: F) -> T
     where
         F: FnMut() -> Self;
 }
