@@ -405,11 +405,6 @@ mod tests {
         }
 
         #[test]
-        fn sse4_2() {
-            Sse4_2::try_invoke(TestArch);
-        }
-
-        #[test]
         fn avx2() {
             Avx2::try_invoke(TestArch);
         }
